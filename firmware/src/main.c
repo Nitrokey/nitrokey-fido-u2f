@@ -162,11 +162,15 @@ int16_t main(void) {
 			case APP_NOTHING: {}break;                     // Idle state:
 
 			case APP_HID_MSG: {                            // HID msg received, pass to protocols:
-				uint8_t msg_is_hid_req;
+				struct CID* cid = NULL;
 
-				msg_is_hid_req = !custom_command(hid_msg); // Parse at first as a custom cmd: Custom cmd processing
-				if (msg_is_hid_req) {                      // It isnt a custom cmd, so must be a HID request
-					u2f_hid_request(hid_msg);              // HID msg processing
+				cid = get_cid(hid_msg->cid);
+				if (!cid->busy) {                          // There is no ongoing U2FHID transfer
+					if (!custom_command(hid_msg)) {
+						u2f_hid_request(hid_msg);
+					}
+				} else {
+					u2f_hid_request(hid_msg);
 				}
 
 				if (state == APP_HID_MSG) {                // The USB msg doesnt ask a special app state
