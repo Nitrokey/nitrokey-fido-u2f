@@ -36,12 +36,15 @@
 extern data uint32_t _MS_;
 extern SI_SEGMENT_VARIABLE(myUsbDevice, USBD_Device_TypeDef, MEM_MODEL_SEG);
 
-SI_SBIT(U2F_BUTTON, SFR_P0, 1);
-SI_SBIT(U2F_LED,    SFR_P0, 6);
+SI_SBIT(U2F_BUTTON,       SFR_P0, 1);
+SI_SBIT(U2F_LED,          SFR_P0, 6);
+SI_SBIT(U2F_BUTTON_RESET, SFR_P0, 7);
 
 #define IS_BUTTON_PRESSED()      (U2F_BUTTON == 0)
 #define LED_ON()                 { U2F_LED = 0; }
 #define LED_OFF()                { U2F_LED = 1; }
+#define BUTTON_RESET_ON()        { U2F_BUTTON_RESET = 0; }
+#define BUTTON_RESET_OFF()       { U2F_BUTTON_RESET = 1; }
 #define IS_LED_ON()              (U2F_LED == 0)
 #define GetEp(epAddr)            (&myUsbDevice.ep0 + epAddr)
 #define watchdog()	             (WDTCN = 0xA5)

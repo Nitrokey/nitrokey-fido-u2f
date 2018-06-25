@@ -30,6 +30,8 @@
  */
 
 #include "app.h"
+
+#undef U2F_DISABLE
 #ifndef U2F_DISABLE
 #include "bsp.h"
 #include "u2f.h"
@@ -38,6 +40,7 @@
 #include "atecc508a.h"
 
 
+static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle);
 
 static struct u2f_hid_msg res;
 static uint8_t* resbuf = (uint8_t*)&res;
@@ -69,11 +72,17 @@ void u2f_response_start()
 int8_t u2f_get_user_feedback()
 {
 	uint32_t t;
-	u2f_delay(1);
-	while(IsButtonPressed()){                         // Wait to release button
+
+	BUTTON_RESET_ON();                                // Clear ghost touches
+	u2f_delay(6);
+	BUTTON_RESET_OFF();
+	t = get_ms();
+	while (IS_BUTTON_PRESSED()) {                     // Wait to release button
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT) {  // 3 secs timeout
+			return 1;
+		}
 		watchdog();
 	}
-	t = get_ms();
 	LedBlink(LED_BLINK_NUM_INF, 375);
 	while(!IsButtonPressed())                         // Wait to push button
 	{
@@ -226,7 +235,6 @@ int8_t u2f_ecdsa_sign(uint8_t * dest, uint8_t * handle, uint8_t * appid)
 }
 
 
-
 // bad if this gets interrupted
 int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 {
@@ -263,7 +271,7 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 	}
 	watchdog();
 	compute_key_hash(private_key,  WMASK);
-	memmove(handle+4, res_digest.buf, 32);  // size of key handle must be 36
+	memmove(handle+4, res_digest.buf, 32);  // size of key handle must be 36+8
 
 
 	if ( atecc_privwrite(U2F_TEMP_KEY_SLOT, private_key, WMASK, handle+4) != 0)
@@ -282,15 +290,18 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 
 	memmove(pubkey, res.buf, 64);
 
+	// the + 8
+	gen_u2f_zero_tag(handle + U2F_KEY_HANDLE_KEY_SIZE, appid, handle);
+
 	return 0;
 }
 
 int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 {
-	struct atecc_response res;
 	uint8_t private_key[36];
 	int i;
 
+	watchdog();
 	SHA_HMAC_KEY = U2F_MASTER_KEY_SLOT;
 	SHA_FLAGS = ATECC_SHA_HMACSTART;
 	u2f_sha256_start();
@@ -305,34 +316,30 @@ int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 	{
 		private_key[i] ^= RMASK[i];
 	}
-
 	return atecc_privwrite(U2F_TEMP_KEY_SLOT, private_key, WMASK, handle+4);
+}
+
+static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle)
+{
+	const char * u2f_zero_const = "\xc1\xff\x67\x0d\x66\xe5\x55\xbb\xdc\x56\xaf\x7b\x41\x27\x4a\x21";
+	SHA_HMAC_KEY = U2F_MASTER_KEY_SLOT;
+	SHA_FLAGS = ATECC_SHA_HMACSTART;
+	u2f_sha256_start();
+
+	u2f_sha256_update(handle,U2F_KEY_HANDLE_KEY_SIZE);
+	u2f_sha256_update(u2f_zero_const,16);
+	u2f_sha256_update(appid,32);
+
+	SHA_FLAGS = ATECC_SHA_HMACEND;
+	u2f_sha256_finish();
+
+	if (dst) memmove(dst, res_digest.buf, U2F_KEY_HANDLE_ID_SIZE);
 }
 
 int8_t u2f_appid_eq(uint8_t * handle, uint8_t * appid)
 {
-//	struct atecc_response res;
-//	uint8_t private_key[36];
-//	int i;
-//
-//	SHA_HMAC_KEY = U2F_MASTER_KEY_SLOT;
-//	SHA_FLAGS = ATECC_SHA_HMACSTART;
-//	u2f_sha256_start();
-//	u2f_sha256_update(appid,32);
-//	SHA_FLAGS = ATECC_SHA_HMACEND;
-//	u2f_sha256_finish();
-//
-//	memset(private_key,0,4);
-//	memmove(private_key+4, res_digest.buf, 32);
-//
-//	for (i=4; i<36; i++)
-//	{
-//		private_key[i] ^= RMASK[i];
-//	}
-//
-//	compute_key_hash(private_key,  WMASK);
-//	return memcmp(handle, res_digest.buf, U2F_KEY_HANDLE_SIZE);
-	return 0;
+	gen_u2f_zero_tag(NULL,appid, handle);
+	return memcmp(handle+U2F_KEY_HANDLE_KEY_SIZE, res_digest.buf, U2F_KEY_HANDLE_ID_SIZE);
 }
 
 uint32_t u2f_count()

@@ -104,7 +104,7 @@ static void PORTS_0_enter_DefaultMode_from_RESET(void) {
 	P0MDOUT = P0MDOUT_B0__OPEN_DRAIN | P0MDOUT_B1__OPEN_DRAIN // 0.1: Button
 			| P0MDOUT_B3__OPEN_DRAIN | P0MDOUT_B4__PUSH_PULL
 			| P0MDOUT_B5__OPEN_DRAIN | P0MDOUT_B6__PUSH_PULL  // 0.6: LED
-			| P0MDOUT_B7__PUSH_PULL;
+			| P0MDOUT_B7__PUSH_PULL;                          // 0.7: Button reset
 	// [P0MDOUT - Port 0 Output Mode]$
 
 	// $[P0MDIN - Port 0 Input Mode]
