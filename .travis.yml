@@ -1,0 +1,18 @@
+language: C
+sudo: false
+os: linux
+dist: trusty
+addons:
+        apt:
+                packages:
+                        - cppcheck
+
+
+install:
+        - true
+
+script:
+        - cppcheck -q --enable=all --error-exitcode=10  firmware/src 2> err.txt
+        - cat err.txt
+        - cppcheck -q --inconclusive --error-exitcode=0 --enable=all firmware/src 2> err-inconc.txt
+        - sort err.txt err-inconc.txt | uniq -u
