@@ -156,6 +156,15 @@ struct atecc_key_config
 	uint8_t x509id : 2;
 };
 
+extern uint8_t SHA_FLAGS;
+extern uint8_t SHA_HMAC_KEY;
+extern struct  atecc_response res_digest;
+
+extern void u2f_sha256_start  ();
+extern void u2f_sha256_update (uint8_t * buf, uint8_t len);
+extern void u2f_sha256_finish ();
+extern void compute_key_hash  (uint8_t * key, uint8_t * mask, int slot);
+
 void atecc_idle();
 void atecc_wake();
 void atecc_sleep();

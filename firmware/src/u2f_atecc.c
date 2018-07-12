@@ -47,12 +47,6 @@ static uint8_t* resbuf = (uint8_t*)&res;
 static uint8_t resseq = 0;
 static uint8_t serious = 0;
 
-
-void u2f_init()
-{
-
-}
-
 void u2f_response_writeback(uint8_t * buf, uint16_t len)
 {
 	u2f_hid_writeback(buf, len);
@@ -72,79 +66,35 @@ void u2f_response_start()
 int8_t u2f_get_user_feedback()
 {
 	uint32_t t;
-	u2f_delay(1);
+
+	BUTTON_RESET_ON();                                // Clear ghost touches
+	u2f_delay(6);
+	BUTTON_RESET_OFF();
 	t = get_ms();
-	while(U2F_BUTTON_IS_PRESSED()){}
-	while(!U2F_BUTTON_IS_PRESSED())
+	while (IS_BUTTON_PRESSED()) {                     // Wait to release button
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT) {  // 3 secs timeout
+			return 1;
+		}
+		watchdog();
+	}
+	LedBlink(LED_BLINK_NUM_INF, 375);
+	while(!IsButtonPressed())                         // Wait to push button
 	{
-		// turn red
-		if (serious)
-		{
-			rgb_hex(U2F_DEFAULT_COLOR_ERROR);
-		}
-		else
-		{	// yellow
-			rgb_hex(U2F_DEFAULT_COLOR_INPUT);
-		}
-		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT)
-			break;
+		TaskLedBlink();                               // Run button driver
+        TaskButton();                                 // Run led driver to ensure blinking
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT)    // 3 secs elapsed without button press
+			break;                                    // Timeout
 		watchdog();
 	}
 
-	if (U2F_BUTTON_IS_PRESSED())
-	{
-		rgb_hex(U2F_DEFAULT_COLOR_INPUT_SUCCESS);
-	}
-	else
-	{
-		rgb_hex(U2F_DEFAULT_COLOR_ERROR);
-		return 1;
+	if (IsButtonPressed()) {                          // Button has been pushed in time
+		LedOn();
+	} else {                                          // Button hasnt been pushed within the timeout
+		LedBlink(LED_BLINK_NUM_INF, 375);
+		return 1;                                     // Return error code
 	}
 
 	return 0;
-}
-
-static uint8_t shabuf[70];
-static uint8_t shaoffset = 0;
-uint8_t SHA_FLAGS = 0;
-uint8_t SHA_HMAC_KEY = 0;
-static struct atecc_response res_digest;
-
-void u2f_sha256_start()
-{
-	shaoffset = 0;
-	atecc_send_recv(ATECC_CMD_SHA,
-			SHA_FLAGS, SHA_HMAC_KEY,NULL,0,
-			shabuf, sizeof(shabuf), NULL);
-	SHA_HMAC_KEY = 0;
-}
-
-
-void u2f_sha256_update(uint8_t * buf, uint8_t len)
-{
-	uint8_t i = 0;
-	watchdog();
-	while(len--)
-	{
-		shabuf[shaoffset++] = *buf++;
-		if (shaoffset == 64)
-		{
-			atecc_send_recv(ATECC_CMD_SHA,
-					ATECC_SHA_UPDATE, 64,shabuf,64,
-					shabuf, sizeof(shabuf), NULL);
-			shaoffset = 0;
-		}
-	}
-}
-
-
-void u2f_sha256_finish()
-{
-	if (SHA_FLAGS == ATECC_SHA_START) SHA_FLAGS = ATECC_SHA_END;
-	atecc_send_recv(ATECC_CMD_SHA,
-			SHA_FLAGS, shaoffset,shabuf,shaoffset,
-			shabuf, sizeof(shabuf), &res_digest);
-	SHA_FLAGS = ATECC_SHA_START;
 }
 
 static int atecc_prep_encryption()
@@ -169,28 +119,6 @@ static int atecc_prep_encryption()
 	return 0;
 }
 
-static void compute_key_hash(uint8_t * key, uint8_t * mask)
-{
-	// key must start with 4 zeros
-	memset(appdata.tmp,0,28);
-	memmove(appdata.tmp + 28, key, 36);
-
-	u2f_sha256_start();
-
-	u2f_sha256_update(mask,32);
-
-
-	appdata.tmp[0] = ATECC_CMD_PRIVWRITE;
-	appdata.tmp[1] = ATECC_PRIVWRITE_ENC;
-	appdata.tmp[2] = 2;
-	appdata.tmp[3] = 0;
-	appdata.tmp[4] = 0xee;
-	appdata.tmp[5] = 0x01;
-	appdata.tmp[6] = 0x23;
-
-	u2f_sha256_update(appdata.tmp,28 + 36);
-	u2f_sha256_finish();
-}
 
 static int atecc_privwrite(int keyslot, uint8_t * key, uint8_t * mask, uint8_t * digest)
 {
@@ -271,7 +199,7 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 		private_key[i] ^= RMASK[i];
 	}
 	watchdog();
-	compute_key_hash(private_key,  WMASK);
+	compute_key_hash(private_key,  WMASK, 2);
 	memmove(handle+4, res_digest.buf, 32);  // size of key handle must be 36+8
 
 

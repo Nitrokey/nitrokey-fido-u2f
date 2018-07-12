@@ -37,6 +37,12 @@
 #include "bsp.h"
 
 
+static uint8_t shabuf[70];
+static uint8_t shaoffset = 0;
+uint8_t SHA_FLAGS = 0;
+uint8_t SHA_HMAC_KEY = 0;
+struct atecc_response res_digest;
+
 
 int8_t atecc_send(uint8_t cmd, uint8_t p1, uint16_t p2,
 					uint8_t * buf, uint8_t len)
@@ -176,46 +182,6 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 }
 
 
-#ifdef ATECC_SETUP_DEVICE
-
-int8_t atecc_write_eeprom(uint8_t base, uint8_t offset, uint8_t* srcbuf, uint8_t len)
-{
-	uint8_t buf[7];
-	struct atecc_response res;
-
-	uint8_t * dstbuf = srcbuf;
-	if (offset + len > 4)
-		return -1;
-	if (len < 4)
-	{
-		atecc_send_recv(ATECC_CMD_READ,
-				ATECC_RW_CONFIG, base, NULL, 0,
-				buf, sizeof(buf), &res);
-
-		dstbuf = res.buf;
-		memmove(res.buf + offset, srcbuf, len);
-	}
-
-	atecc_send_recv(ATECC_CMD_WRITE,
-			ATECC_RW_CONFIG, base, dstbuf, 4,
-			buf, sizeof(buf), &res);
-
-	if (res.buf[0])
-	{
-		set_app_error(-res.buf[0]);
-		return -1;
-	}
-	return 0;
-}
-
-
-
-static uint8_t shabuf[70];
-static uint8_t shaoffset = 0;
-uint8_t SHA_FLAGS = 0;
-uint8_t SHA_HMAC_KEY = 0;
-static struct atecc_response res_digest;
-
 void u2f_sha256_start()
 {
 	shaoffset = 0;
@@ -252,6 +218,64 @@ void u2f_sha256_finish()
 			shabuf, sizeof(shabuf), &res_digest);
 	SHA_FLAGS = 0;
 }
+
+
+void compute_key_hash(uint8_t * key, uint8_t * mask, int slot)
+{
+	// key must start with 4 zeros
+	memset(appdata.tmp,0,28);
+	memmove(appdata.tmp + 28, key, 36);
+
+	u2f_sha256_start();
+
+	u2f_sha256_update(mask,32);
+
+
+	appdata.tmp[0] = ATECC_CMD_PRIVWRITE;
+	appdata.tmp[1] = ATECC_PRIVWRITE_ENC;
+	appdata.tmp[2] = slot;
+	appdata.tmp[3] = 0;
+	appdata.tmp[4] = 0xee;
+	appdata.tmp[5] = 0x01;
+	appdata.tmp[6] = 0x23;
+
+	u2f_sha256_update(appdata.tmp,28 + 36);
+	u2f_sha256_finish();
+}
+
+
+#ifdef ATECC_SETUP_DEVICE
+
+int8_t atecc_write_eeprom(uint8_t base, uint8_t offset, uint8_t* srcbuf, uint8_t len)
+{
+	uint8_t buf[7];
+	struct atecc_response res;
+
+	uint8_t * dstbuf = srcbuf;
+	if (offset + len > 4)
+		return -1;
+	if (len < 4)
+	{
+		atecc_send_recv(ATECC_CMD_READ,
+				ATECC_RW_CONFIG, base, NULL, 0,
+				buf, sizeof(buf), &res);
+
+		dstbuf = res.buf;
+		memmove(res.buf + offset, srcbuf, len);
+	}
+
+	atecc_send_recv(ATECC_CMD_WRITE,
+			ATECC_RW_CONFIG, base, dstbuf, 4,
+			buf, sizeof(buf), &res);
+
+	if (res.buf[0])
+	{
+		set_app_error(-res.buf[0]);
+		return -1;
+	}
+	return 0;
+}
+
 
 static uint8_t get_signature_length(uint8_t * sig)
 {
@@ -489,28 +513,6 @@ int atecc_privwrite(uint16_t keyslot, uint8_t * key, uint8_t * mask, uint8_t * d
 	return 0;
 }
 
-static void compute_key_hash(uint8_t * key, uint8_t * mask, int slot)
-{
-	// key must start with 4 zeros
-	memset(appdata.tmp,0,28);
-	memmove(appdata.tmp + 28, key, 36);
-
-	u2f_sha256_start();
-
-	u2f_sha256_update(mask,32);
-
-
-	appdata.tmp[0] = ATECC_CMD_PRIVWRITE;
-	appdata.tmp[1] = ATECC_PRIVWRITE_ENC;
-	appdata.tmp[2] = slot;
-	appdata.tmp[3] = 0;
-	appdata.tmp[4] = 0xee;
-	appdata.tmp[5] = 0x01;
-	appdata.tmp[6] = 0x23;
-
-	u2f_sha256_update(appdata.tmp,28 + 36);
-	u2f_sha256_finish();
-}
 
 void atecc_setup_init(uint8_t * buf)
 {
