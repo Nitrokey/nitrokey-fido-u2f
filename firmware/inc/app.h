@@ -83,18 +83,6 @@
 #endif
 
 
-//								{blue(0), green(0x5a), red(0)}
-#define U2F_DEFAULT_BRIGHTNESS					90
-#define U2F_COLOR 								0x001300
-#define U2F_DEFAULT_COLOR_PRIME 				0x130000
-#define U2F_DEFAULT_COLOR_ERROR 				0x000038
-#define U2F_DEFAULT_COLOR_INPUT 				0x000603
-#define U2F_DEFAULT_COLOR_INPUT_SUCCESS			0x251200
-#define U2F_COLOR_WINK 							0x120000
-#define U2F_DEFAULT_COLOR_WINK_OUT_OF_SPACE 	0x030312
-
-#define U2F_DEFAULT_COLOR_PERIOD				20
-
 typedef enum
 {
 	APP_NOTHING = 0,
@@ -179,9 +167,6 @@ uint8_t get_app_state();
 void set_app_state(APP_STATE s);
 
 
-// should be called after initializing eeprom
-void u2f_init();
-
 
 #ifdef ATECC_SETUP_DEVICE
 
@@ -195,18 +180,15 @@ void u2f_config_request();
 
 #define U2F_HID_DISABLE
 #define U2F_DISABLE
-#define u2f_init(x)
 #define u2f_hid_init(x)
 #define u2f_hid_request(x)	atecc_setup_device((struct config_msg*)x)
 #define u2f_hid_set_len(x)
 #define u2f_hid_flush(x)
 #define u2f_hid_writeback(x)
 #define u2f_hid_check_timeouts(x)
-#define u2f_wipe_keys(x)	1
 
 #else
 
-int8_t u2f_wipe_keys();
 #define atecc_setup_device(x)
 #define atecc_setup_init(x)
 #endif
