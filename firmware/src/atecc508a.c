@@ -899,8 +899,9 @@ void atecc_setup_device(struct config_msg * msg)
 
 			if (!is_data_locked(buf))
 			{
+				crc = 0;
 				if (atecc_send_recv(ATECC_CMD_LOCK,
-						ATECC_LOCK_DATA_OTP | 0x80, crc, NULL, 0,
+						ATECC_LOCK_DATA_OTP | ATECC_LOCK_IGNORE_SUMMARY, crc, NULL, 0,
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK data failed\r\n");

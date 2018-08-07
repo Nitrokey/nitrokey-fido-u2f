@@ -83,7 +83,7 @@
 	#define ATECC_LOCK_DATA_OTP 		0x01
 	#define ATECC_LOCK_SLOT 			0x02
 	#define ATECC_LOCK_SLOTNUM(x) 		(((x)&0xf)<<2)
-	#define ATECC_LOCK_IGNORE_SUMMARY 	0x08
+	#define ATECC_LOCK_IGNORE_SUMMARY 	0x80
 	// P2 is CRC or 0
 
 #define ATECC_CMD_GENKEY 				0x40
