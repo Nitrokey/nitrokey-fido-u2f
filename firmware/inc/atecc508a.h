@@ -58,6 +58,12 @@
 	#define ATECC_RW_DATA 				0x02
 	#define ATECC_RW_EXT 				0x80
 	// P2 read addr
+	#define ATECC_RW_LENGTH				(4)
+	#define ATECC_RW_LENGTH_EXT			(32)
+	#define ATECC_RW_SUFFIX_LENGTH		(4)
+
+#define ATECC_CONFIG_LOCK_VALUE_POS 	(86)
+#define ATECC_CONFIG_LOCK_CONFIG_POS 	(87)
 
 #define ATECC_CMD_WRITE 				0x12
 	// P1 same as for read

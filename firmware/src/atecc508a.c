@@ -453,26 +453,27 @@ static void dump_signature_der(uint8_t * sig)
 }
 
 
-static int is_config_locked(uint8_t * buf)
+static uint8_t read_config_byte(uint8_t pos)
 {
+	uint8_t buf[ATECC_RW_LENGTH + ATECC_RW_SUFFIX_LENGTH];
 	struct atecc_response res;
 	atecc_send_recv(ATECC_CMD_READ,
-					ATECC_RW_CONFIG,87/4, NULL, 0,
-					buf, 36, &res);
-	u2f_prints("is_config_locked  "); dump_hex(res.buf, res.len);
-	if (res.buf[87 % 4] == 0)
+					ATECC_RW_CONFIG, pos/ATECC_RW_LENGTH, NULL, 0,
+					buf, sizeof(buf), &res);
+	return res.buf[pos % ATECC_RW_LENGTH];
+}
+
+static int is_config_locked(uint8_t * buf)
+{
+	if (read_config_byte(ATECC_CONFIG_LOCK_CONFIG_POS) == 0)
 		return 1;
 	else
 		return 0;
 }
+
 static int is_data_locked(uint8_t * buf)
 {
-	struct atecc_response res;
-	atecc_send_recv(ATECC_CMD_READ,
-					ATECC_RW_CONFIG,86/4, NULL, 0,
-					buf, 36, &res);
-	u2f_prints("is_data_locked  "); dump_hex(res.buf, res.len);
-	if (res.buf[86 % 4] == 0)
+	if (read_config_byte(ATECC_CONFIG_LOCK_VALUE_POS) == 0)
 		return 1;
 	else
 		return 0;
