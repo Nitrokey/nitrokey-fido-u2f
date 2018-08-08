@@ -167,12 +167,9 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 		return -1; //U2F_SW_CUSTOM_RNG_GENERATION
 	}
 
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update(appid,32);
 	u2f_sha256_update(res.buf,4);
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
 	memmove(handle, res.buf, 4);  // size of key handle must be 36
@@ -214,12 +211,9 @@ int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 	uint8_t private_key[36];
 
 	watchdog();
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update(appid,32);
 	u2f_sha256_update(handle,4);
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
 	memset(private_key,0,4);
@@ -232,9 +226,7 @@ int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 
 static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle)
 {
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 
 	u2f_sha256_update(handle,U2F_KEY_HANDLE_KEY_SIZE);
 
@@ -244,7 +236,6 @@ static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle)
 
 	u2f_sha256_update(appid,32);
 
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
 	if (dst) memmove(dst, res_digest.buf, U2F_KEY_HANDLE_ID_SIZE);

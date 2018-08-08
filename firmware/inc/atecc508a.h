@@ -163,14 +163,20 @@ struct atecc_key_config
 	uint8_t x509id : 2;
 };
 
-extern uint8_t SHA_FLAGS;
-extern uint8_t SHA_HMAC_KEY;
+extern struct SHA_context{
+	uint8_t shabuf[70]; //FIXME see, why buffer is 70 instead of 64; correct, if not overextended
+	uint8_t shaoffset;
+	uint8_t SHA_FLAGS;
+	uint8_t SHA_HMAC_KEY;
+} sha_ctx;
+
 extern struct  atecc_response res_digest;
 
-extern void u2f_sha256_start  ();
+extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
+extern void u2f_sha256_start_default();
 extern void u2f_sha256_update (uint8_t * buf, uint8_t len);
-extern void u2f_sha256_finish ();
 extern void compute_key_hash  (uint8_t * key, uint16_t mask, int slot);
+extern struct atecc_response* u2f_sha256_finish();
 extern int atecc_prep_encryption();
 extern int atecc_privwrite(uint16_t keyslot, uint8_t * key, uint16_t mask, uint8_t * digest);
 

@@ -182,7 +182,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
 	count = u2f_count();
 
-    u2f_sha256_start();
+    u2f_sha256_start_default();
     u2f_sha256_update(req->app,32);
     u2f_sha256_update(&up,1);
     u2f_sha256_update((uint8_t *)&count,4);
@@ -227,7 +227,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
     	return U2F_SW_INSUFFICIENT_MEMORY+status_code;
     }
 
-    u2f_sha256_start();
+    u2f_sha256_start_default();
     u2f_sha256_update(i,1);
     u2f_sha256_update(req->app,32);
 
