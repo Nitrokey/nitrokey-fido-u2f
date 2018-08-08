@@ -267,7 +267,9 @@ void u2f_sha256_update(uint8_t * buf, uint8_t len)
 	}
 }
 
-
+/**
+ * out: internal ATECC's TempKey buffer, copied back to the device into `res_digest`
+ */
 void u2f_sha256_finish()
 {
 	if (SHA_FLAGS == 0) SHA_FLAGS = ATECC_SHA_END;
@@ -279,7 +281,7 @@ void u2f_sha256_finish()
 
 /**
  * Makes hash of PRIVWRITE(slot) command's payload, key and mask
- * out: internal ATECC's TempKey buffer
+ * out: internal ATECC's TempKey buffer, copied back to the device
  */
 void compute_key_hash(uint8_t * key, uint16_t mask, int slot)
 {
@@ -453,6 +455,9 @@ static void dump_signature_der(uint8_t * sig)
 }
 
 
+/**
+ * Reads one ATECC508A's configuration byte. Read is done by 4 bytes.
+ */
 static uint8_t read_config_byte(uint8_t pos)
 {
 	uint8_t buf[ATECC_RW_LENGTH + ATECC_RW_SUFFIX_LENGTH];
@@ -463,6 +468,9 @@ static uint8_t read_config_byte(uint8_t pos)
 	return res.buf[pos % ATECC_RW_LENGTH];
 }
 
+/**
+ * See 2.2 EEPROM Configuration Zone of ATECC508A's Complete Data Sheet
+ */
 static int is_config_locked(uint8_t * buf)
 {
 	if (read_config_byte(ATECC_CONFIG_LOCK_CONFIG_POS) == 0)
@@ -471,6 +479,9 @@ static int is_config_locked(uint8_t * buf)
 		return 0;
 }
 
+/**
+ * See 2.2 EEPROM Configuration Zone of ATECC508A's Complete Data Sheet
+ */
 static int is_data_locked(uint8_t * buf)
 {
 	if (read_config_byte(ATECC_CONFIG_LOCK_VALUE_POS) == 0)
@@ -479,6 +490,9 @@ static int is_data_locked(uint8_t * buf)
 		return 0;
 }
 
+/**
+ * Prints ATECC508A's configuration over serial line
+ */
 static void dump_config(uint8_t* buf)
 {
 	uint8_t i,j;
