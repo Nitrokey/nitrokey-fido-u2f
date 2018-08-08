@@ -237,7 +237,9 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 	return 0;
 }
 
-
+/**
+ * Initializes sha256 computation on ATECC chip. Uses global sha_ctx variable.
+ */
 void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags)
 {
 	sha_ctx.SHA_FLAGS = sha_flags;
@@ -253,7 +255,10 @@ void u2f_sha256_start_default()
 	u2f_sha256_start(0, ATECC_SHA_START);
 }
 
-
+/**
+ * Sends data for sha256 computation on ATECC chip. Buffers input data in global buffer
+ * `sha_ctx.shabuf` with 64 bytes size and sends only, if input exceeds its capacity.
+ */
 void u2f_sha256_update(uint8_t * buf, uint8_t len)
 {
 	uint8_t i = 0;
@@ -272,7 +277,8 @@ void u2f_sha256_update(uint8_t * buf, uint8_t len)
 }
 
 /**
- * out: internal ATECC's TempKey buffer, copied back to the device into `res_digest`
+ * Sends remaining data for sha256 computation.
+ * Out: internal ATECC's TempKey buffer, copied back to the MCU into `res_digest` variable
  */
 struct atecc_response* u2f_sha256_finish()
 {
@@ -286,7 +292,7 @@ struct atecc_response* u2f_sha256_finish()
 
 /**
  * Makes hash of PRIVWRITE(slot) command's payload, key and mask
- * out: internal ATECC's TempKey buffer, copied back to the device
+ * Out: internal ATECC's TempKey buffer, copied back to the MCU into `res_digest` variable
  */
 void compute_key_hash(uint8_t * key, uint16_t mask, int slot)
 {
