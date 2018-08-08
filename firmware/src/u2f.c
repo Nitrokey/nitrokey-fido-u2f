@@ -140,12 +140,12 @@ static void dump_signature_der(uint8_t * sig)
 static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t control)
 {
 
-	uint8_t up = 1;
-	uint32_t count;
+	uint8_t users_presence_flag = 1;
+	uint32_t counter;
 
 	if (control == U2F_AUTHENTICATE_CHECK)
 	{
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		if (u2f_appid_eq(req->kh, req->app) == 0)
 		{
 			return U2F_SW_CONDITIONS_NOT_SATISFIED;
@@ -168,7 +168,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
 		)
 	{
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_WRONG_PAYLOAD;
 	}
 
@@ -176,29 +176,30 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
 	if (u2f_get_user_feedback())
 	{
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_CONDITIONS_NOT_SATISFIED;
 	}
 
-	count = u2f_count();
+	counter = u2f_count();
 
     u2f_sha256_start_default();
-    u2f_sha256_update(req->app,32);
-    u2f_sha256_update(&up,1);
-    u2f_sha256_update((uint8_t *)&count,4);
-    u2f_sha256_update(req->chal,32);
+    u2f_sha256_update(req->app,sizeof(req->app));
+    u2f_sha256_update(&users_presence_flag,1);
+    u2f_sha256_update((uint8_t *)&counter,4);
+    u2f_sha256_update(req->challenge,sizeof(req->challenge));
 
     u2f_sha256_finish();
 
     if (u2f_ecdsa_sign((uint8_t*)req, req->kh, req->app) == -1)
 	{
-    	return U2F_SW_WRONG_DATA+0x20;
+    	return U2F_SW_WRONG_DATA+0x20; //FIXME custom error code - change to any from spec?
 	}
 
-    u2f_hid_set_len(7 + get_signature_length((uint8_t*)req));
+    u2f_hid_set_len(U2F_SW_LENGTH + 1 + 4
+    		+ get_signature_length((uint8_t*)req));
 
-    u2f_response_writeback(&up,1);
-    u2f_response_writeback((uint8_t *)&count,4);
+    u2f_response_writeback(&users_presence_flag,1);
+    u2f_response_writeback((uint8_t *)&counter,4);
     dump_signature_der((uint8_t*)req);
 
 	return U2F_SW_NO_ERROR;

@@ -72,6 +72,7 @@
 #define U2F_SW_CLASS_NOT_SUPPORTED          0x6E00
 #define U2F_SW_WRONG_PAYLOAD	            0x6a80
 #define U2F_SW_INSUFFICIENT_MEMORY          0x9210
+#define U2F_SW_LENGTH						(2)
 
 // Custom errors
 #define U2F_SW_CUSTOM_RNG_GENERATION        0x920f
@@ -108,7 +109,7 @@ struct u2f_register_request
 
 struct u2f_authenticate_request
 {
-    uint8_t chal[U2F_CHALLENGE_SIZE];
+    uint8_t challenge[U2F_CHALLENGE_SIZE];
     uint8_t app[U2F_APPLICATION_SIZE];
     uint8_t khl;
     uint8_t kh[U2F_KEY_HANDLE_SIZE];
