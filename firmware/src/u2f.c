@@ -53,7 +53,7 @@ void u2f_request(struct u2f_request_apdu * req)
 
     if (req->cla != 0)
     {
-    	u2f_hid_set_len(2);
+    	u2f_hid_set_len(U2F_SW_LENGTH);
     	*rcode = U2F_SW_CLASS_NOT_SUPPORTED;
     	goto end;
     }
@@ -63,7 +63,7 @@ void u2f_request(struct u2f_request_apdu * req)
         case U2F_REGISTER:
         	if (len != 64)
         	{
-            	u2f_hid_set_len(2);
+            	u2f_hid_set_len(U2F_SW_LENGTH);
             	*rcode = U2F_SW_WRONG_LENGTH;
         	}
         	else
@@ -77,7 +77,7 @@ void u2f_request(struct u2f_request_apdu * req)
         case U2F_VERSION:
         	if (len)
         	{
-            	u2f_hid_set_len(2);
+            	u2f_hid_set_len(U2F_SW_LENGTH);
             	*rcode = U2F_SW_WRONG_LENGTH;
         	}
         	else
@@ -90,13 +90,13 @@ void u2f_request(struct u2f_request_apdu * req)
         	*rcode = U2F_SW_NO_ERROR;
         	break;
         default:
-        	u2f_hid_set_len(2);
+        	u2f_hid_set_len(U2F_SW_LENGTH);
         	*rcode = U2F_SW_INS_NOT_SUPPORTED;
         	break;
     }
 
     end:
-    u2f_response_writeback((uint8_t*)rcode,2);
+    u2f_response_writeback((uint8_t*)rcode,U2F_SW_LENGTH);
     u2f_response_flush();
 }
 
@@ -229,9 +229,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
     u2f_sha256_start_default();
     u2f_sha256_update(i,1);
     u2f_sha256_update(req->app,sizeof(req->app));
-
     u2f_sha256_update(req->chal,sizeof(req->chal));
-
     u2f_sha256_update(key_handle,sizeof(key_handle));
     u2f_sha256_update(i+1,1);
     u2f_sha256_update(pubkey,sizeof(pubkey));
