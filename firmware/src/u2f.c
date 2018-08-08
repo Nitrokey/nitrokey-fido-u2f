@@ -139,7 +139,6 @@ static void dump_signature_der(uint8_t * sig)
 
 static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t control)
 {
-
 	uint8_t users_presence_flag = 1;
 	uint32_t counter;
 
@@ -165,7 +164,6 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 			control != U2F_AUTHENTICATE_SIGN ||
 			u2f_appid_eq(req->kh, req->app) != 0 ||		// Order of checks is important
 			u2f_load_key(req->kh, req->app) != 0
-
 		)
 	{
 		u2f_hid_set_len(U2F_SW_LENGTH);
@@ -217,14 +215,14 @@ static int16_t u2f_register(struct u2f_register_request * req)
 
     if (u2f_get_user_feedback())
     {
-    	u2f_hid_set_len(2);
+    	u2f_hid_set_len(U2F_SW_LENGTH);
         return U2F_SW_CONDITIONS_NOT_SATISFIED;
     }
 
     status_code = u2f_new_keypair(key_handle, req->app, pubkey);
 	if (status_code != 0)
     {
-    	u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
     	return U2F_SW_INSUFFICIENT_MEMORY+status_code;
     }
 
@@ -244,18 +242,21 @@ static int16_t u2f_register(struct u2f_register_request * req)
     	return U2F_SW_WRONG_DATA;
 	}
 
-    u2f_hid_set_len(69 + get_signature_length((uint8_t*)req) + U2F_KEY_HANDLE_SIZE + u2f_attestation_cert_size());
+    u2f_hid_set_len(2 + 1
+    		+ U2F_SW_LENGTH
+    		+ sizeof(pubkey)
+    		+ get_signature_length((uint8_t*)req)
+    		+ U2F_KEY_HANDLE_SIZE
+    		+ u2f_attestation_cert_size());
     i[0] = 0x5;
     u2f_response_writeback(i,2);
-    u2f_response_writeback(pubkey,64);
+    u2f_response_writeback(pubkey,sizeof(pubkey));
     i[0] = U2F_KEY_HANDLE_SIZE;
     u2f_response_writeback(i,1);
     u2f_response_writeback(key_handle,U2F_KEY_HANDLE_SIZE);
-
     u2f_response_writeback(u2f_get_attestation_cert(),u2f_attestation_cert_size());
 
     dump_signature_der((uint8_t*)req);
-
 
     return U2F_SW_NO_ERROR;
 }
@@ -263,7 +264,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
 static int16_t u2f_version()
 {
 	code const char version[] = "U2F_V2";
-	u2f_hid_set_len(2 + sizeof(version)-1);
+	u2f_hid_set_len(U2F_SW_LENGTH + sizeof(version)-1);
 	u2f_response_writeback(version, sizeof(version)-1);
 	return U2F_SW_NO_ERROR;
 }
