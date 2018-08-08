@@ -29,15 +29,25 @@
 #include "eeprom.h"
 #include "bsp.h"
 
+//See EFM8UB1 Reference Manual, 4.3.1 Security Options
+#define SECURITY_BYTE_POSITION 	(0xFBFF)
+#define SECURITY_BYTE_UNSET 	(0xFF)
+#define SECURITY_BYTE_PAGE	 	(0xFBC0)
+
+//number of pages has to be 1's complement
+#define LOCK_FIRST_N_PAGES(x) 	(0xFF^(x))
+//page has 512 bytes
+#define LOCK_FIRST_N_KBYTES(x) 	(LOCK_FIRST_N_PAGES( (x)*2 ))
+
 void eeprom_init()
 {
 	uint8_t secbyte;
-	eeprom_read(0xFBFF,&secbyte,1);
-	if (secbyte == 0xff)
+	eeprom_read(SECURITY_BYTE_POSITION,&secbyte,1);
+	if (secbyte == SECURITY_BYTE_UNSET)
 	{
-		eeprom_erase(0xFBC0);
-		secbyte = -80;
-		eeprom_write(0xFBFF, &secbyte, 1);
+		eeprom_erase(SECURITY_BYTE_PAGE);
+		secbyte = LOCK_FIRST_N_KBYTES(40);
+		eeprom_write(SECURITY_BYTE_POSITION, &secbyte, 1);
 	}
 }
 
