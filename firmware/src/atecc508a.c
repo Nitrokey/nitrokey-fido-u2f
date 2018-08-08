@@ -37,10 +37,8 @@
 
 #include "bsp.h"
 
-uint8_t shabuf[70];
-uint8_t shaoffset = 0;
-uint8_t SHA_FLAGS = 0;
-uint8_t SHA_HMAC_KEY = 0;
+struct SHA_context sha_ctx;
+
 struct atecc_response res_digest;
 
 #ifdef ATECC_SETUP_DEVICE
@@ -240,13 +238,19 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 }
 
 
-void u2f_sha256_start()
+void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags)
 {
-	shaoffset = 0;
+	sha_ctx.SHA_FLAGS = sha_flags;
+	sha_ctx.SHA_HMAC_KEY = hmac_key;
+	sha_ctx.shaoffset = 0;
 	atecc_send_recv(ATECC_CMD_SHA,
-			SHA_FLAGS, SHA_HMAC_KEY,NULL,0,
-			shabuf, sizeof(shabuf), NULL);
-	SHA_HMAC_KEY = 0;
+			sha_ctx.SHA_FLAGS, sha_ctx.SHA_HMAC_KEY,NULL,0,
+			sha_ctx.shabuf, sizeof(sha_ctx.shabuf), NULL);
+}
+
+void u2f_sha256_start_default()
+{
+	u2f_sha256_start(0, ATECC_SHA_START);
 }
 
 
@@ -256,13 +260,13 @@ void u2f_sha256_update(uint8_t * buf, uint8_t len)
 	watchdog();
 	while(len--)
 	{
-		shabuf[shaoffset++] = *buf++;
-		if (shaoffset == 64)
+		sha_ctx.shabuf[sha_ctx.shaoffset++] = *buf++;
+		if (sha_ctx.shaoffset == 64)
 		{
 			atecc_send_recv(ATECC_CMD_SHA,
-					ATECC_SHA_UPDATE, 64,shabuf,64,
-					shabuf, sizeof(shabuf), NULL);
-			shaoffset = 0;
+					ATECC_SHA_UPDATE, 64, sha_ctx.shabuf, 64,
+					sha_ctx.shabuf, sizeof(sha_ctx.shabuf), NULL);
+			sha_ctx.shaoffset = 0;
 		}
 	}
 }
@@ -270,13 +274,14 @@ void u2f_sha256_update(uint8_t * buf, uint8_t len)
 /**
  * out: internal ATECC's TempKey buffer, copied back to the device into `res_digest`
  */
-void u2f_sha256_finish()
+struct atecc_response* u2f_sha256_finish()
 {
-	if (SHA_FLAGS == 0) SHA_FLAGS = ATECC_SHA_END;
+	if (sha_ctx.SHA_FLAGS == ATECC_SHA_START) sha_ctx.SHA_FLAGS = ATECC_SHA_END;
+	else if (sha_ctx.SHA_FLAGS == ATECC_SHA_HMACSTART) sha_ctx.SHA_FLAGS = ATECC_SHA_HMACEND;
 	atecc_send_recv(ATECC_CMD_SHA,
-			SHA_FLAGS, shaoffset,shabuf,shaoffset,
-			shabuf, sizeof(shabuf), &res_digest);
-	SHA_FLAGS = 0;
+			sha_ctx.SHA_FLAGS, sha_ctx.shaoffset,sha_ctx.shabuf,sha_ctx.shaoffset,
+			sha_ctx.shabuf, sizeof(sha_ctx.shabuf), &res_digest);
+	return &res_digest;
 }
 
 /**
@@ -287,7 +292,7 @@ void compute_key_hash(uint8_t * key, uint16_t mask, int slot)
 {
 	eeprom_read(mask, appdata.tmp, 32);
 
-	u2f_sha256_start();
+	u2f_sha256_start_default();
 	u2f_sha256_update(appdata.tmp, 32);
 
 	// key must start with 4 zeros
@@ -317,7 +322,7 @@ void compute_write_hash(uint8_t * key, uint16_t mask, int slot)
 	// SHA-256(TempKey, Opcode, Param1, Param2, SN<8>, SN<0:1>, <25 bytes of zeros>, PlainTextData)
 	eeprom_read(mask, appdata.tmp, CWH_WMASK_LEN);
 
-	u2f_sha256_start();
+	u2f_sha256_start_default();
 	u2f_sha256_update(appdata.tmp, CWH_WMASK_LEN);
 
 	memset(appdata.tmp,0,CWH_HEADER_LEN+CWH_ZEROES_COUNT);
@@ -749,7 +754,7 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 		}
 	}
 
-	u2f_sha256_start();
+	u2f_sha256_start_default();
 	u2f_sha256_update(output+32, 32);
 
 	memset(output, 0, 64);
@@ -768,7 +773,7 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 	u2f_prints("generated key mask output: "); dump_hex(output,32);
 
 	//stage 2
-	u2f_sha256_start();
+	u2f_sha256_start_default();
 	u2f_sha256_update(output, 32);
 	u2f_sha256_finish();
 
@@ -823,11 +828,8 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 	u2f_prints("u2f_zero_const: "); dump_hex(buf,U2F_CONST_LENGTH);
 	memmove(output+1+32, buf, 16);
 
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update("successful write test");
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 	memmove(output+1+16, res_digest.buf, 16);
 #endif
@@ -968,11 +970,8 @@ void atecc_setup_device(struct config_msg * msg)
 			usbres.buf[0] = 0;
 
 			for (i=0; i<16; i++){
-				SHA_HMAC_KEY = i;
-				SHA_FLAGS = ATECC_SHA_HMACSTART;
-				u2f_sha256_start();
+				u2f_sha256_start(i, ATECC_SHA_HMACSTART);
 				u2f_sha256_update("successful write test");
-				SHA_FLAGS = ATECC_SHA_HMACEND;
 				u2f_sha256_finish();
 				if (get_app_error() == ERROR_NOTHING)
 						memmove(usbres.buf+i*3+1, res_digest.buf, 3);

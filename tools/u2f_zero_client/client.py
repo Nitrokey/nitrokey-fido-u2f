@@ -374,6 +374,7 @@ def do_configure(h,pemkey):
     h.write([0,commands.U2F_CONFIG_LOAD_ATTEST_KEY] + [ord(x) for x in attestkey.to_string()])
     data = read_n_tries(h,5,64,1000)
     if len(data)<2 or data[1] != 1:
+        print(data[:2])
         die('failed loading attestation key')
 
 

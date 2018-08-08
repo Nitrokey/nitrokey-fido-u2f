@@ -151,7 +151,8 @@ extern int8_t u2f_get_user_feedback();
 void clear_button_press();
 
 // u2f_sha256_start callback for u2f to start a sha256 hash
-extern void u2f_sha256_start();
+extern void u2f_sha256_start_default();
+extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
 
 // u2f_sha256_update callback for u2f to add data to started sha256 state
 //  @buf data to update hash with
@@ -161,7 +162,7 @@ extern void u2f_sha256_update(uint8_t * buf, uint8_t len);
 // u2f_sha256_finish callback for u2f to harvest hash from
 //  @buf final data to update hash with
 //  @len length of buf in bytes
-extern void u2f_sha256_finish();
+extern struct atecc_response* u2f_sha256_finish();
 
 
 // u2f_ecdsa_sign callback for u2f to compute signature on the previously computed sha256 digest
