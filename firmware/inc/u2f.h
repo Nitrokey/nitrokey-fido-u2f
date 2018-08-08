@@ -158,7 +158,7 @@ extern void u2f_sha256_start();
 //  @len length of buf in bytes
 extern void u2f_sha256_update(uint8_t * buf, uint8_t len);
 
-// u2f_sha256_finish callback for u2f to havest hash from
+// u2f_sha256_finish callback for u2f to harvest hash from
 //  @buf final data to update hash with
 //  @len length of buf in bytes
 extern void u2f_sha256_finish();
