@@ -208,7 +208,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
     uint8_t i[] = {0x0,U2F_EC_FMT_UNCOMPRESSED};
 
     uint8_t key_handle[U2F_KEY_HANDLE_SIZE];
-    uint8_t pubkey[64];
+    uint8_t pubkey[U2F_EC_PUBKEY_RAW_SIZE];
     int8_t status_code = 0;
 
     const uint16_t attest_size = u2f_attestation_cert_size();
@@ -228,13 +228,13 @@ static int16_t u2f_register(struct u2f_register_request * req)
 
     u2f_sha256_start_default();
     u2f_sha256_update(i,1);
-    u2f_sha256_update(req->app,32);
+    u2f_sha256_update(req->app,sizeof(req->app));
 
-    u2f_sha256_update(req->chal,32);
+    u2f_sha256_update(req->chal,sizeof(req->chal));
 
     u2f_sha256_update(key_handle,U2F_KEY_HANDLE_SIZE);
     u2f_sha256_update(i+1,1);
-    u2f_sha256_update(pubkey,64);
+    u2f_sha256_update(pubkey,sizeof(pubkey));
     u2f_sha256_finish();
     
     if (u2f_ecdsa_sign((uint8_t*)req, U2F_ATTESTATION_HANDLE, req->app) == -1)
@@ -248,7 +248,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
     		+ get_signature_length((uint8_t*)req)
     		+ U2F_KEY_HANDLE_SIZE
     		+ u2f_attestation_cert_size());
-    i[0] = 0x5;
+    i[0] = U2F_REGISTER_RESERVED_BYTE;
     u2f_response_writeback(i,2);
     u2f_response_writeback(pubkey,sizeof(pubkey));
     i[0] = U2F_KEY_HANDLE_SIZE;
