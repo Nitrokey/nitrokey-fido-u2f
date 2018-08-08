@@ -75,6 +75,7 @@
 #define U2F_SW_WRONG_PAYLOAD	            0x6a80
 #define U2F_SW_INSUFFICIENT_MEMORY          0x9210
 #define U2F_SW_LENGTH						(2)
+#define U2F_SW_OPERATION_FAILED				(U2F_SW_WRONG_DATA+0x20)
 
 // Custom errors
 #define U2F_SW_CUSTOM_RNG_GENERATION        0x920f

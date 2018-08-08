@@ -190,7 +190,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
     if (u2f_ecdsa_sign((uint8_t*)req, req->kh, req->app) == -1)
 	{
-    	return U2F_SW_WRONG_DATA+0x20; //FIXME custom error code - change to any from spec?
+    	return U2F_SW_OPERATION_FAILED; //FIXME custom error code - change to any from spec?
 	}
 
     u2f_hid_set_len(U2F_SW_LENGTH + 1 + 4
@@ -232,7 +232,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
 
     u2f_sha256_update(req->chal,sizeof(req->chal));
 
-    u2f_sha256_update(key_handle,U2F_KEY_HANDLE_SIZE);
+    u2f_sha256_update(key_handle,sizeof(key_handle));
     u2f_sha256_update(i+1,1);
     u2f_sha256_update(pubkey,sizeof(pubkey));
     u2f_sha256_finish();
