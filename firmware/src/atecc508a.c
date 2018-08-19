@@ -425,47 +425,6 @@ int8_t atecc_write_eeprom(uint8_t base, uint8_t offset, uint8_t* srcbuf, uint8_t
 }
 
 
-
-
-static uint8_t get_signature_length(uint8_t * sig)
-{
-	return 0x46 + ((sig[32] & 0x80) == 0x80) + ((sig[0] & 0x80) == 0x80);
-}
-
-static void dump_signature_der(uint8_t * sig)
-{
-    uint8_t pad_s = (sig[32] & 0x80) == 0x80;
-    uint8_t pad_r = (sig[0] & 0x80) == 0x80;
-    uint8_t i[] = {0x30, 0x44};
-    uint8_t sigbuf[120];
-    i[1] += (pad_s + pad_r);
-
-
-    // DER encoded signature
-    // write der sequence
-    // has to be minimum distance and padded with 0x00 if MSB is a 1.
-    memmove(sigbuf,i,2);
-    i[1] = 0;
-
-    // length of R value plus 0x00 pad if necessary
-    memmove(sigbuf+2,"\x02",1);
-    i[0] = 0x20 + pad_r;
-    memmove(sigbuf+3,i,1 + pad_r);
-
-    // R value
-    memmove(sigbuf+3+1+pad_r,sig, 32);
-
-    // length of S value plus 0x00 pad if necessary
-    memmove(sigbuf+3+1+pad_r+32,"\x02",1);
-    i[0] = 0x20 + pad_s;
-    memmove(sigbuf+3+1+pad_r+32+1,i,1 + pad_s);
-
-    // S value
-    memmove(sigbuf+3+1+pad_r+32+1+1+pad_s,sig+32, 32);
-//    u2f_prints("signature-der: "); dump_hex(sigbuf, get_signature_length(sig));
-}
-
-
 /**
  * Reads one ATECC508A's configuration byte. Read is done by 4 bytes.
  */
