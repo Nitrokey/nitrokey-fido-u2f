@@ -166,11 +166,11 @@ int16_t main(void) {
 				} else {
 					u2f_hid_request(hid_msg);
 				}
-#else
+#else //!ATECC_SETUP_DEVICE
 				if (!custom_command(hid_msg)) {
 					 u2f_hid_request(hid_msg);
 				}
-#endif
+#endif //ATECC_SETUP_DEVICE
 				if (state == APP_HID_MSG) {                // The USB msg doesnt ask a special app state
 					state = APP_NOTHING;	               // We can go back to idle
 				}
@@ -187,8 +187,6 @@ int16_t main(void) {
 		{
 			u2f_printx("error: ", 1, (uint16_t)error);
 
-#ifndef ON_ERROR_RESET_IMMEDIATELY
-
 //			for (i=0; i<0x400;i++)                    // wipe ram
 //			{
 //				*(clear++) = 0x0;
@@ -197,12 +195,11 @@ int16_t main(void) {
 			i = 0x1300 + error;
 			u2f_response_writeback(&i,2);
 			watchdog();
-#endif
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
 			RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
-#else
+#endif
 
 #ifdef U2F_BLINK_ERRORS
 			LedBlink(LED_BLINK_NUM_INF, 50);
@@ -218,7 +215,6 @@ int16_t main(void) {
 				;
 #endif //U2F_BLINK_ERRORS
 
-#endif
 		}
 	}
 }
