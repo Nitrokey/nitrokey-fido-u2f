@@ -186,25 +186,9 @@ int16_t main(void) {
 		if (error)
 		{
 			u2f_printx("error: ", 1, (uint16_t)error);
-#ifdef U2F_BLINK_ERRORS
-			for (ms_grad=0; ms_grad < 8; ms_grad++)
-			{
-				if (error & (1<<ms_grad))
-				{
-					rgb_hex(U2F_DEFAULT_COLOR_INPUT_SUCCESS);
-				}
-				else
-				{
-					rgb_hex(U2F_DEFAULT_COLOR_ERROR);
-				}
-				u2f_delay(400);
-				rgb_hex(0);
-				u2f_delay(100);
 
-			}
-#else
 #ifndef ON_ERROR_RESET_IMMEDIATELY
-			//LedBlink(LED_BLINK_NUM_INF, 375);       // Blink wont work because of the following
+
 //			for (i=0; i<0x400;i++)                    // wipe ram
 //			{
 //				*(clear++) = 0x0;
@@ -214,15 +198,26 @@ int16_t main(void) {
 			u2f_response_writeback(&i,2);
 			watchdog();
 #endif
-#endif
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
 			RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
 #else
+
+#ifdef U2F_BLINK_ERRORS
+			LedBlink(LED_BLINK_NUM_INF, 50);
+			// wait for watchdog to reset
+			while(1)
+			{
+				led_blink_manager();
+			}
+
+#else //!U2F_BLINK_ERRORS
 			// wait for watchdog to reset
 			while(1)
 				;
+#endif //U2F_BLINK_ERRORS
+
 #endif
 		}
 	}
