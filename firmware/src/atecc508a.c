@@ -53,6 +53,7 @@ int8_t read_masks(){
 	eeprom_read(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
 	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
 	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
+	return 0;
 }
 
 int8_t write_masks(){
@@ -60,6 +61,7 @@ int8_t write_masks(){
 	eeprom_erase(EEPROM_DATA_WMASK);
 	eeprom_write(EEPROM_DATA_RMASK, device_configuration.RMASK, sizeof(device_configuration.RMASK));
 	eeprom_write(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
+	return 0;
 }
 #endif
 
