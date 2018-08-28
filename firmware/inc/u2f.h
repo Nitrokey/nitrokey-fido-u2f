@@ -164,8 +164,7 @@ extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
 extern void u2f_sha256_update(uint8_t * buf, uint8_t len);
 
 // u2f_sha256_finish callback for u2f to harvest hash from
-//  @buf final data to update hash with
-//  @len length of buf in bytes
+// returns pointer to result buffer via atecc_response
 extern struct atecc_response* u2f_sha256_finish();
 
 
