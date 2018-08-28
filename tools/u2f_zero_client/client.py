@@ -171,6 +171,7 @@ class commands:
     U2F_CONFIG_LOAD_READ_KEY = 0x8b
     U2F_CONFIG_GEN_DEVICE_KEY = 0x8c
     U2F_CONFIG_GET_SLOTS_FINGERPRINTS = 0x8d
+    U2F_CONFIG_TEST_CONFIG = 0x8e
 
     U2F_CUSTOM_RNG = 0x21
     U2F_CUSTOM_SEED = 0x22
@@ -570,6 +571,11 @@ def do_ping(h, num):
         print('{} {}'.format(len(data_req), len(data_resp)))
 
 
+def do_config_test(h):
+    h.write([0, commands.U2F_CONFIG_TEST_CONFIG])
+    data = read_n_tries(h, 5, 64, 1000)
+    print (len(data), repr(data))
+
 def do_fingerprints(h):
     print('Get data slots fingerprints')
     h.write([0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
@@ -617,6 +623,9 @@ if __name__ == '__main__':
         do_passt(h)
     elif action == 'list':
         do_list()
+    elif action == 'config-test':
+        h = open_u2f(SN)
+        do_config_test(h)
     elif action == 'wink':
         h = open_u2f(SN)
         do_wink(h)

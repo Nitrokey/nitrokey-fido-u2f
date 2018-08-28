@@ -543,9 +543,6 @@ static void atecc_setup_config(uint8_t* buf)
 {
 	uint8_t i;
 
-//	struct atecc_slot_config c;
-
-
 	uint8_t * slot_configs = "\x83\x71"
 							 "\x81\x01"
 							 "\x83\x71"
@@ -970,6 +967,11 @@ void atecc_setup_device(struct config_msg * msg)
 			}
 
 			break;
+
+		case U2F_CONFIG_TEST_CONFIG:
+			usbres.buf[0] = get_readable_config();
+			break;
+
 		case U2F_CONFIG_BOOTLOADER_DESTROY:
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-0));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-1));
