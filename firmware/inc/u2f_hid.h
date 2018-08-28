@@ -147,12 +147,6 @@ void u2f_hid_request(struct u2f_hid_msg* req);
 
 struct CID* get_cid(uint32_t cid);
 
-// app_wink blink a light on the platform
-// must be implemented elsewhere for specific platform used
-//  @color optional hex color
-extern void app_wink(uint32_t color);
-
-
 // set_app_error set global error value
 // must be implemented elsewhere for specific platform used
 //  @ec error values defined in app.h
