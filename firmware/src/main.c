@@ -95,9 +95,6 @@ int16_t main(void) {
 	uint16_t ms_wink;
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
-    #ifdef U2F_BLINK_ERRORS
-	uint16_t ii;
-    #endif
 
 	enter_DefaultMode_from_RESET();
 
