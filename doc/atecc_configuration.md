@@ -56,6 +56,7 @@ Slot config: 0
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -80,6 +81,7 @@ Slot config: 1
 hex: 8101
 writeconfig: 0
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -104,6 +106,7 @@ Slot config: 2
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -128,6 +131,7 @@ Slot config: 3
 hex: c101
 writeconfig: 0
 writekey: 1
+secret: 1
 encread: 1
 limiteduse: 0
 nomac: 0
@@ -152,6 +156,7 @@ Slot config: 4
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -176,6 +181,7 @@ Slot config: 5
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -200,6 +206,7 @@ Slot config: 6
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -224,6 +231,7 @@ Slot config: 7
 hex: c171
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 1
 limiteduse: 0
 nomac: 0
@@ -248,6 +256,7 @@ Slot config: 8
 hex: 0101
 writeconfig: 0
 writekey: 1
+secret: 0
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -272,6 +281,7 @@ Slot config: 9
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -296,6 +306,7 @@ Slot config: a
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -320,6 +331,7 @@ Slot config: b
 hex: c171
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 1
 limiteduse: 0
 nomac: 0
@@ -344,6 +356,7 @@ Slot config: c
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -368,6 +381,7 @@ Slot config: d
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -392,6 +406,7 @@ Slot config: e
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
@@ -416,6 +431,7 @@ Slot config: f
 hex: 8371
 writeconfig: 7
 writekey: 1
+secret: 1
 encread: 0
 limiteduse: 0
 nomac: 0
