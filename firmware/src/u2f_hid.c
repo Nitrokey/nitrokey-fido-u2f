@@ -319,11 +319,11 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 			init_res->version_minor = 0;
 			init_res->version_build = 0;
 
-#ifdef U2F_SUPPORT_WINK and CAPABILITY_LOCK
+#if defined(U2F_SUPPORT_WINK) && defined(CAPABILITY_LOCK)
 			init_res->cflags = CAPABILITY_WINK | CAPABILITY_LOCK;
-#elif U2F_SUPPORT_WINK
+#elif defined(U2F_SUPPORT_WINK)
 			init_res->cflags = CAPABILITY_WINK;
-#elif CAPABILITY_LOCK
+#elif defined(CAPABILITY_LOCK)
 			init_res->cflags = CAPABILITY_LOCK;
 #else
 			init_res->cflags = 0;
