@@ -24,6 +24,7 @@
 
  */
 
+#include "app.h"
 #include "atecc508a.h"
 #include <string.h> // memset()
 #include "bsp.h" // used in dump_config()
@@ -142,6 +143,8 @@ void dump_config(uint8_t* buf)
 #endif
 }
 
+
+#ifdef ATECC_SETUP_DEVICE
 
 uint8_t atecc_setup_config(uint8_t* buf)
 {
@@ -606,3 +609,5 @@ uint8_t compare_binary_readable_configs(uint8_t* out_config, uint8_t out_len){
 	return 0;
 }
 #undef MIN
+
+#endif //ATECC_SETUP_DEVICE
