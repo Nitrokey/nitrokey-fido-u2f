@@ -44,9 +44,6 @@
 static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle);
 
 static struct u2f_hid_msg res;
-static uint8_t* resbuf = (uint8_t*)&res;
-static uint8_t resseq = 0;
-static uint8_t serious = 0;
 
 
 void u2f_response_writeback(uint8_t * buf, uint16_t len)

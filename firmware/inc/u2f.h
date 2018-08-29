@@ -97,13 +97,6 @@ struct u2f_request_apdu
     uint8_t payload[U2F_MAX_REQUEST_PAYLOAD];
 };
 
-struct u2f_ec_point
-{
-    uint8_t fmt;
-    uint8_t x[U2F_EC_POINT_SIZE];
-    uint8_t y[U2F_EC_POINT_SIZE];
-};
-
 struct u2f_register_request
 {
     uint8_t challenge[U2F_CHALLENGE_SIZE];
