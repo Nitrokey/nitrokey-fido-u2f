@@ -534,11 +534,11 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 
 void atecc_setup_init(uint8_t * buf)
 {
-	// change watchdog period to 13s
-	WDTCN = 7;
 	dump_config(buf);
 	if (!is_config_locked(buf))
 	{
+		// change watchdog period to 13s
+		WDTCN = 7;
 		u2f_prints("setting up config...\r\n");
 		atecc_setup_config(buf);
 	}
@@ -743,6 +743,8 @@ void atecc_setup_device(struct config_msg * msg)
 
 			if (!is_config_locked(buf))
 			{
+				// change watchdog period to 13s
+				WDTCN = 7;
 				// try to write config beforehand
 				i = atecc_setup_config(appdata.tmp);
 				if (i != 0){
