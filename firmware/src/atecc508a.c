@@ -844,11 +844,11 @@ void atecc_setup_device(struct config_msg * msg)
 			}
 
 			break;
-
+#ifndef _PRODUCTION_RELEASE
 		case U2F_CONFIG_TEST_CONFIG:
-			usbres.buf[0] = compare_binary_readable_configs();
+			usbres.buf[0] = compare_binary_readable_configs(usbres.buf+1, sizeof(usbres.buf)-1);
 			break;
-
+#endif
 		case U2F_CONFIG_BOOTLOADER_DESTROY:
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-0));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-1));

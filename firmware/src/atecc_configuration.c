@@ -143,32 +143,42 @@ void dump_config(uint8_t* buf)
 }
 
 
-void atecc_setup_config(uint8_t* buf)
+uint8_t atecc_setup_config(uint8_t* buf)
 {
 	uint8_t i;
+	uint8_t errors = 0;
+	uint8_t slot_arr[32];
+	uint8_t key_arr[32];
+
+	i = get_readable_config(slot_arr, sizeof(slot_arr), key_arr, sizeof(key_arr));
+	if (i != 0) {
+		while (1) ; // refuse to work with invalid configuration data, execute watchdog reset
+	}
 
 	// write configuration
 	for (i = 0; i < 16; i++)
 	{
-		if ( atecc_write_eeprom(ATECC_EEPROM_SLOT(i), ATECC_EEPROM_SLOT_OFFSET(i), binary_slot_configs+i*2, ATECC_EEPROM_SLOT_SIZE) != 0)
+		if ( atecc_write_eeprom(ATECC_EEPROM_SLOT(i), ATECC_EEPROM_SLOT_OFFSET(i), slot_arr+i*2, ATECC_EEPROM_SLOT_SIZE) != 0)
 		{
 			u2f_printb("1 atecc_write_eeprom failed ",1, i);
+			errors++;
+			break;
 		}
 
-		if ( atecc_write_eeprom(ATECC_EEPROM_KEY(i), ATECC_EEPROM_KEY_OFFSET(i), binary_key_configs+i*2, ATECC_EEPROM_KEY_SIZE) != 0)
+		if ( atecc_write_eeprom(ATECC_EEPROM_KEY(i), ATECC_EEPROM_KEY_OFFSET(i), key_arr+i*2, ATECC_EEPROM_KEY_SIZE) != 0)
 		{
 			u2f_printb("2 atecc_write_eeprom failed " ,1,i);
+			errors++;
+			break;
 		}
-
 	}
 
-
 	dump_config(buf);
+	return errors;
 }
 
-uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
-
-
+uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t slotconfig_len,
+							uint8_t * out_keyconfig,  uint8_t keyconfig_len){
 	struct atecc_slot_config *c;
 	struct atecc_key_config *d;
 
@@ -176,6 +186,13 @@ uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
 	struct atecc_key_config key_arr[16];
 
 	uint8_t result;
+
+	if (out_slotconfig != NULL && slotconfig_len != sizeof(slot_arr))
+		return 3;
+
+	if (out_keyconfig != NULL && keyconfig_len != sizeof(key_arr))
+		return 4;
+
 
 	memset(slot_arr, 0, sizeof(slot_arr));
 	memset(key_arr, 0, sizeof(key_arr));
@@ -551,20 +568,24 @@ uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
 	d->private = 1;
 
 	if (out_keyconfig != NULL)
-		memmove(out_keyconfig, key_arr, 16*2);
+		memmove(out_keyconfig, key_arr, keyconfig_len);
 
 	if (out_slotconfig != NULL)
-		memmove(out_slotconfig, slot_arr, 16*2);
+		memmove(out_slotconfig, slot_arr, slotconfig_len);
 
 	return 0;
 }
 
-uint8_t compare_binary_readable_configs(){
+
+#define MIN(a,b)	(((a)<(b))?(a):(b))
+uint8_t compare_binary_readable_configs(uint8_t* out_config, uint8_t out_len){
 	struct atecc_slot_config slot_arr[16];
 	struct atecc_key_config key_arr[16];
 	uint8_t result;
 
-	get_readable_config(slot_arr, key_arr);
+	result = get_readable_config(slot_arr, sizeof(slot_arr),
+								key_arr, sizeof(key_arr));
+	if (result != 0) return 3;
 
 	result = sizeof(slot_arr);
 	result = memcmp(slot_arr, binary_slot_configs, sizeof(slot_arr));
@@ -574,5 +595,14 @@ uint8_t compare_binary_readable_configs(){
 	result = memcmp(key_arr, binary_key_configs, sizeof(key_arr));
 	if (result != 0) return 2;
 
+	if (out_config != NULL && out_len >= 0){
+		memmove(out_config, slot_arr, MIN(sizeof(slot_arr), out_len) );
+		if (out_len > sizeof(slot_arr)){
+			out_len -= sizeof(slot_arr);
+			memmove(out_config + sizeof(slot_arr), key_arr, MIN(sizeof(key_arr), out_len));
+		}
+	}
+
 	return 0;
 }
+#undef MIN

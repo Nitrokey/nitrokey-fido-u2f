@@ -174,9 +174,11 @@ extern struct SHA_context{
 extern struct  atecc_response res_digest;
 
 // ATECC's configuration
-extern uint8_t get_readable_config();
-extern void atecc_setup_config(uint8_t* buf);
+extern uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t slotconfig_len,
+		uint8_t * out_keyconfig,  uint8_t keyconfig_len);
+extern uint8_t atecc_setup_config(uint8_t* buf);
 extern void dump_config(uint8_t* buf);
+extern uint8_t compare_binary_readable_configs(uint8_t* out_config, uint8_t out_len);
 
 extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
 extern void u2f_sha256_start_default();
