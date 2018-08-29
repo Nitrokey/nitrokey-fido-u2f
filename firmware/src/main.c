@@ -42,9 +42,6 @@
 #include "u2f.h"
 #include "tests.h"
 
-#define ms_since(ms,num) (((uint16_t)get_ms() - (ms)) >= num ? ((ms=(uint16_t)get_ms())):0)
-
-
 data struct APP_DATA appdata;
 
 uint8_t error;
@@ -116,7 +113,6 @@ int16_t main(void) {
 
 	if (RSTSRC & RSTSRC_WDTRSF__SET)
 	{
-		//error = ERROR_DAMN_WATCHDOG;
 		u2f_prints("r");
 	}
 	u2f_prints("U2F ZERO ==================================\r\n");
@@ -190,10 +186,6 @@ int16_t main(void) {
 //			{
 //				*(clear++) = 0x0;
 //			}
-			u2f_hid_set_len(2);
-			i = 0x1300 + error;
-			u2f_response_writeback(&i,2);
-			watchdog();
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
