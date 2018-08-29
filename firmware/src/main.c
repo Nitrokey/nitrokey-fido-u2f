@@ -42,9 +42,6 @@
 #include "u2f.h"
 #include "tests.h"
 
-#define ms_since(ms,num) (((uint16_t)get_ms() - (ms)) >= num ? ((ms=(uint16_t)get_ms())):0)
-
-
 data struct APP_DATA appdata;
 
 uint8_t error;
