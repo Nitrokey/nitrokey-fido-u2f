@@ -303,11 +303,14 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 
 			if (hid_layer.current_cid == U2FHID_BROADCAST)
 			{
+				//FIXME dead code
 				if (hid_layer.current_cid == 0)
 				{
 					set_app_error(ERROR_OUT_OF_CIDS);
 					goto fail;
 				}
+				//dead code end
+
 				init_res->cid = get_new_cid();
 			}
 			else
