@@ -70,8 +70,10 @@ static struct hid_layer_param
 	// total length of response in bytes
 	uint16_t res_len;
 
-	// FIXME Maximum request size seem to be U2F Auth 66 (header) + 128 (key handle) = 194 bytes. Decrease size, if needed.
-	#define BUFFER_SIZE (270)
+	// FIXME Maximum allowed request size seem to be U2F Auth 66 (challenge+header) + 256 (key handle) = 322 bytes
+	// We use 64 bytes key handle, hence 130 bytes will suffice.
+	// Decrease size, if needed.
+	#define BUFFER_SIZE (210)
 	uint8_t buffer[BUFFER_SIZE];
 
 } hid_layer;
