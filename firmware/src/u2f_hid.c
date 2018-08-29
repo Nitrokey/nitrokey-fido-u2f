@@ -287,7 +287,7 @@ static int buffer_request(struct u2f_hid_msg* req)
 static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 {
 	uint16_t len = 0;
-	uint8_t secs;
+	uint8_t seconds;
 	struct u2f_hid_init_response * init_res = appdata.tmp;
 
 	switch(hid_layer.current_cmd)
@@ -423,17 +423,17 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 #ifdef U2F_SUPPORT_HID_LOCK
 		case U2FHID_LOCK:
 
-			secs = req->pkt.init.payload[0];
-			if (secs > 10)
+			seconds = req->pkt.init.payload[0];
+			if (seconds > 10)
 			{
 				stamp_error(hid_layer.current_cid, ERR_INVALID_PAR);
 			}
 			else
 			{
-				if (secs)
+				if (seconds)
 				{
 					_hid_lock_cid = hid_layer.current_cid;
-					_hid_lockt = get_ms() + 1000 * secs;
+					_hid_lockt = get_ms() + 1000 * seconds;
 
 				}
 				else
