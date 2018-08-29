@@ -494,7 +494,7 @@ void u2f_hid_request(struct u2f_hid_msg* req)
 	// Error checking
 	if ((U2FHID_IS_INIT(req->pkt.init.cmd)))
 	{
-		if (U2FHID_LEN(req) > 7609) // 7609 = 128*59+1*57 (128 continuation frames + 1 init frame)
+		if (U2FHID_LEN(req) > U2FHID_MAX_PAYLOAD_SIZE)
 		{
 			stamp_error(req->cid, ERR_INVALID_LEN);
 			return;
