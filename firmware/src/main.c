@@ -91,8 +91,6 @@ void set_app_u2f_hid_msg(struct u2f_hid_msg * msg )
 }
 
 int16_t main(void) {
-	uint16_t ms_heart;
-	uint16_t ms_wink;
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
 
