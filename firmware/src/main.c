@@ -113,7 +113,6 @@ int16_t main(void) {
 
 	if (RSTSRC & RSTSRC_WDTRSF__SET)
 	{
-		//error = ERROR_DAMN_WATCHDOG;
 		u2f_prints("r");
 	}
 	u2f_prints("U2F ZERO ==================================\r\n");
