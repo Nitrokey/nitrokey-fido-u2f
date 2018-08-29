@@ -374,7 +374,6 @@ int atecc_prep_encryption()
 int atecc_privwrite(uint16_t keyslot, uint8_t * key, uint16_t mask, uint8_t * digest)
 {
 	struct atecc_response res;
-	uint8_t i;
 
 	atecc_prep_encryption();
 
