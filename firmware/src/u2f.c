@@ -227,11 +227,11 @@ static int16_t u2f_register(struct u2f_register_request * req)
     }
 
     u2f_sha256_start_default();
-    u2f_sha256_update(i,1);
+    u2f_sha256_update(i,1); // 0
     u2f_sha256_update(req->application,sizeof(req->application));
     u2f_sha256_update(req->challenge,sizeof(req->challenge));
     u2f_sha256_update(key_handle,sizeof(key_handle));
-    u2f_sha256_update(i+1,1);
+    u2f_sha256_update(i+1,1); // U2F_EC_FMT_UNCOMPRESSED
     u2f_sha256_update(pubkey,sizeof(pubkey));
     u2f_sha256_finish();
     
