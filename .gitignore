@@ -71,4 +71,16 @@ workers/
 *.gbr
 gerbers/
 
+# IDEs
+.idea
+.cproject*
+.vscode
+.settings
 
+# various WIP files
+*.log
+*.txt
+*.html
+*.patch
+tmp
+env*
