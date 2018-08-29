@@ -534,7 +534,7 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 
 void atecc_setup_init(uint8_t * buf)
 {
-	// 13s watchdog
+	// change watchdog period to 13s
 	WDTCN = 7;
 	dump_config(buf);
 	if (!is_config_locked(buf))
@@ -548,6 +548,10 @@ void atecc_setup_init(uint8_t * buf)
 	}
 }
 
+/**
+ * Generates 32 bytes of random data.
+ * out_buf has to be at least 32 bytes sized.
+ */
 uint8_t generate_random_data(uint8_t *out_buf){
 	struct atecc_response res;
 	if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
@@ -561,6 +565,11 @@ uint8_t generate_random_data(uint8_t *out_buf){
 	return 1;
 }
 
+/**
+ * Generate key mask.
+ * output has to be at least 64 bytes sized.
+ * wkey bool 1:generate and write wkey, 0: generate rkey
+ */
 void generate_mask(uint8_t *output, uint8_t wkey){
 	u2f_prints("generating mask ... ");	dump_hex(&wkey,1);
 
@@ -572,6 +581,7 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 	u2f_prints("generated random output+32: "); dump_hex(output+32,32);
 
 	if (wkey == 1){
+		// generation of wkey (write key) is requested, it needs to be saved in a raw form first
 		memmove(trans_key, output+32, 32);
 		u2f_prints("generated trans_key: "); dump_hex(trans_key,32);
 
