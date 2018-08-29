@@ -117,7 +117,9 @@ int16_t main(void) {
 	}
 	u2f_prints("U2F ZERO ==================================\r\n");
 
+#ifndef _PRODUCTION_RELEASE
 	run_tests();
+#endif
 	BUTTON_RESET_OFF();
 	led_off();
 
