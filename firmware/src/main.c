@@ -188,10 +188,6 @@ int16_t main(void) {
 //			{
 //				*(clear++) = 0x0;
 //			}
-			u2f_hid_set_len(2);
-			i = 0x1300 + error;
-			u2f_response_writeback(&i,2);
-			watchdog();
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
