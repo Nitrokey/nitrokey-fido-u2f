@@ -684,31 +684,31 @@ typedef struct atecc_command{
 } atecc_cmd;
 
 // buf should be at least 40 bytes
-void atecc_setup_device(struct config_msg * msg)
+void atecc_setup_device(struct config_msg * usb_msg_in)
 {
 	struct atecc_response res;
-	struct config_msg usbres;
+	struct config_msg usb_msg_out;
 
 	static uint16_t crc = 0;
 	int i;
 	uint8_t buf[40];
 
-	memset(&usbres, 0, sizeof(struct config_msg));
-	usbres.cmd = msg->cmd;
-	u2f_prints("incoming msg: "); dump_hex(msg,64);
+	memset(&usb_msg_out, 0, sizeof(struct config_msg));
+	usb_msg_out.cmd = usb_msg_in->cmd;
+	u2f_prints("incoming msg: "); dump_hex(usb_msg_in,64);
 
-	switch(msg->cmd)
+	switch(usb_msg_in->cmd)
 	{
 #ifndef _PRODUCTION_RELEASE
 		case U2F_CONFIG_ATECC_PASSTHROUGH:
 		{
-			atecc_cmd* cmd = (atecc_cmd*)msg->buf;
+			atecc_cmd* cmd = (atecc_cmd*)usb_msg_in->buf;
 			uint8_t err = atecc_send_recv(cmd->opcode,
 					cmd->P1, cmd->P2, cmd->buf, cmd->data_length,
 					buf, sizeof(buf), &res);
-			memset(usbres.buf, 0, sizeof(usbres.buf));
-			memmove(usbres.buf+1, res.buf, res.len);
-			usbres.buf[0] = err;
+			memset(usb_msg_out.buf, 0, sizeof(usb_msg_out.buf));
+			memmove(usb_msg_out.buf+1, res.buf, res.len);
+			usb_msg_out.buf[0] = err;
 		} break;
 #endif
 		case U2F_CONFIG_GET_SERIAL_NUM:
@@ -717,8 +717,8 @@ void atecc_setup_device(struct config_msg * msg)
 			atecc_send_recv(ATECC_CMD_READ,
 					ATECC_RW_CONFIG | ATECC_RW_EXT, 0, NULL, 0,
 					buf, 40, &res);
-			memmove(usbres.buf+1, res.buf, 15);
-			usbres.buf[0] = 15;
+			memmove(usb_msg_out.buf+1, res.buf, 15);
+			usb_msg_out.buf[0] = 15;
 			break;
 
 		case U2F_CONFIG_LOAD_TRANS_KEY:
@@ -728,16 +728,16 @@ void atecc_setup_device(struct config_msg * msg)
 
 		case U2F_CONFIG_IS_BUILD:
 			u2f_prints("U2F_CONFIG_IS_BUILD\r\n");
-			usbres.buf[0] = 1;
+			usb_msg_out.buf[0] = 1;
 			break;
 		case U2F_CONFIG_IS_CONFIGURED:
 			u2f_prints("U2F_CONFIG_IS_CONFIGURED\r\n");
-			usbres.buf[0] = 1;
+			usb_msg_out.buf[0] = 1;
 			break;
 
 		case U2F_CONFIG_LOCK:
-			crc = *(uint16_t*)msg->buf;
-			usbres.buf[0] = 1;
+			crc = *(uint16_t*)usb_msg_in->buf;
+			usb_msg_out.buf[0] = 1;
 			u2f_printx("got crc: ",1,crc);
 
 			if (!is_config_locked(buf))
@@ -747,7 +747,7 @@ void atecc_setup_device(struct config_msg * msg)
 				// try to write config beforehand
 				i = atecc_setup_config(appdata.tmp);
 				if (i != 0){
-					usbres.buf[0] = 4;
+					usb_msg_out.buf[0] = 4;
 					break;
 				}
 
@@ -756,7 +756,7 @@ void atecc_setup_device(struct config_msg * msg)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK config failed\r\n");
-					usbres.buf[0] = 2;
+					usb_msg_out.buf[0] = 2;
 					break;
 				}
 			}
@@ -773,7 +773,7 @@ void atecc_setup_device(struct config_msg * msg)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK data failed\r\n");
-					usbres.buf[0] = 3;
+					usb_msg_out.buf[0] = 3;
 					break;
 				}
 			}
@@ -793,8 +793,8 @@ void atecc_setup_device(struct config_msg * msg)
 			write_masks();
 			read_masks();
 			u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
-			usbres.buf[0] = 1;
-			memmove(usbres.buf+1,device_configuration.RMASK,36);
+			usb_msg_out.buf[0] = 1;
+			memmove(usb_msg_out.buf+1,device_configuration.RMASK,36);
 			break;
 
 		case U2F_CONFIG_LOAD_WRITE_KEY:
@@ -808,28 +808,28 @@ void atecc_setup_device(struct config_msg * msg)
 			write_masks();
 			read_masks();
 			u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
-			usbres.buf[0] = 1;
-			memmove(usbres.buf + 1 , device_configuration.WMASK, 36);
+			usb_msg_out.buf[0] = 1;
+			memmove(usb_msg_out.buf + 1 , device_configuration.WMASK, 36);
 			break;
 
 		case U2F_CONFIG_GEN_DEVICE_KEY:
 			u2f_prints("U2F_CONFIG_GEN_DEVICE_KEY\r\n");
-			generate_device_key(usbres.buf, appdata.tmp, sizeof(appdata.tmp));
+			generate_device_key(usb_msg_out.buf, appdata.tmp, sizeof(appdata.tmp));
 			break;
 
 #ifndef _PRODUCTION_RELEASE
 		case U2F_CONFIG_GET_SLOTS_FINGERPRINTS:
-			usbres.buf[0] = 0;
+			usb_msg_out.buf[0] = 0;
 
 			for (i=0; i<16; i++){
 				u2f_sha256_start(i, ATECC_SHA_HMACSTART);
 				u2f_sha256_update("successful write test");
 				u2f_sha256_finish();
 				if (get_app_error() == ERROR_NOTHING)
-						memmove(usbres.buf+i*3+1, res_digest.buf, 3);
+						memmove(usb_msg_out.buf+i*3+1, res_digest.buf, 3);
 			}
 
-			usbres.buf[0] = 1;
+			usb_msg_out.buf[0] = 1;
 			set_app_error(ERROR_NOTHING);
 			break;
 #endif
@@ -839,8 +839,8 @@ void atecc_setup_device(struct config_msg * msg)
 
 			//reusing trans_key buffer for the attestation key upload
 			memset(trans_key,0,36);
-			memmove(trans_key+4,msg->buf,32);
-			usbres.buf[0] = 1;
+			memmove(trans_key+4,usb_msg_in->buf,32);
+			usb_msg_out.buf[0] = 1;
 			compute_key_hash(trans_key,  EEPROM_DATA_WMASK, U2F_ATTESTATION_KEY_SLOT);
 
 			u2f_prints("write key: "); dump_hex(write_key,36);
@@ -851,28 +851,28 @@ void atecc_setup_device(struct config_msg * msg)
 //				key, and SlotConfig.IsSecret must be set to one, or else this command will return an error. If the slot is
 //				individually locked using SlotLocked, then this command will also return an error.
 				u2f_prints("load attest key failed\r\n");
-				usbres.buf[0] = 0;
+				usb_msg_out.buf[0] = 0;
 			}
 
 			break;
 #ifndef _PRODUCTION_RELEASE
 		case U2F_CONFIG_TEST_CONFIG:
-			usbres.buf[0] = compare_binary_readable_configs(usbres.buf+1, sizeof(usbres.buf)-1);
+			usb_msg_out.buf[0] = compare_binary_readable_configs(usb_msg_out.buf+1, sizeof(usb_msg_out.buf)-1);
 			break;
 #endif
 		case U2F_CONFIG_BOOTLOADER_DESTROY:
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-0));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-1));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-2));
-			usbres.buf[0] = 1;
+			usb_msg_out.buf[0] = 1;
 			led_blink(1, 100);
 			break;
 		default:
-			u2f_printb("invalid command: ",1,msg->cmd);
-			usbres.buf[0] = 0;
+			u2f_printb("invalid command: ",1,usb_msg_in->cmd);
+			usb_msg_out.buf[0] = 0;
 	}
 
-	usb_write((uint8_t*)&usbres, HID_PACKET_SIZE);
-	memset(msg, 0, 64);
+	usb_write((uint8_t*)&usb_msg_out, HID_PACKET_SIZE);
+	memset(usb_msg_in, 0, 64);
 }
 #endif
