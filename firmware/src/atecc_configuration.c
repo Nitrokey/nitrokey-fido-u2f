@@ -29,9 +29,45 @@
 #include "bsp.h"
 #include "i2c.h"
 
+static uint8_t * binary_slot_configs =
+						"\x83\x71"
+						"\x81\x01"
+						"\x83\x71"
+						"\xC1\x01"
+						"\x83\x71"
+						"\x83\x71"
+						"\x83\x71"
+						"\xC1\x71"
+						"\x01\x01"
+						"\x83\x71"
+						"\x83\x71"
+						"\xC1\x71"
+						"\x83\x71"
+						"\x83\x71"
+						"\x83\x71"
+						"\x83\x71";
+
+static uint8_t * binary_key_configs =
+						"\x13\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x3C\x00"
+						"\x3C\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x3C\x00"
+						"\x13\x00"
+						"\x33\x00";
 
 /**
  * Prints ATECC508A's configuration over serial line
+ * Requires temporary buffer of size 40.
  */
 void dump_config(uint8_t* buf)
 {
@@ -112,49 +148,15 @@ void atecc_setup_config(uint8_t* buf)
 {
 	uint8_t i;
 
-	uint8_t * slot_configs = "\x83\x71"
-							 "\x81\x01"
-							 "\x83\x71"
-							 "\xC1\x01"
-							 "\x83\x71"
-							 "\x83\x71"
-							 "\x83\x71"
-							 "\xC1\x71"
-							 "\x01\x01"
-							 "\x83\x71"
-							 "\x83\x71"
-							 "\xC1\x71"
-							 "\x83\x71"
-							 "\x83\x71"
-							 "\x83\x71"
-							 "\x83\x71";
-
-	uint8_t * key_configs = "\x13\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x3C\x00"
-							"\x3C\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x3C\x00"
-							"\x13\x00"
-							"\x33\x00";
-
 	// write configuration
 	for (i = 0; i < 16; i++)
 	{
-		if ( atecc_write_eeprom(ATECC_EEPROM_SLOT(i), ATECC_EEPROM_SLOT_OFFSET(i), slot_configs+i*2, ATECC_EEPROM_SLOT_SIZE) != 0)
+		if ( atecc_write_eeprom(ATECC_EEPROM_SLOT(i), ATECC_EEPROM_SLOT_OFFSET(i), binary_slot_configs+i*2, ATECC_EEPROM_SLOT_SIZE) != 0)
 		{
 			u2f_printb("1 atecc_write_eeprom failed ",1, i);
 		}
 
-		if ( atecc_write_eeprom(ATECC_EEPROM_KEY(i), ATECC_EEPROM_KEY_OFFSET(i), key_configs+i*2, ATECC_EEPROM_KEY_SIZE) != 0)
+		if ( atecc_write_eeprom(ATECC_EEPROM_KEY(i), ATECC_EEPROM_KEY_OFFSET(i), binary_key_configs+i*2, ATECC_EEPROM_KEY_SIZE) != 0)
 		{
 			u2f_printb("2 atecc_write_eeprom failed " ,1,i);
 		}
@@ -165,41 +167,7 @@ void atecc_setup_config(uint8_t* buf)
 	dump_config(buf);
 }
 
-uint8_t get_readable_config(){
-
-	uint8_t * slotconfig = 		 "\x83\x71"
-								 "\x81\x01"
-								 "\x83\x71"
-								 "\xC1\x01"
-								 "\x83\x71"
-								 "\x83\x71"
-								 "\x83\x71"
-								 "\xC1\x71"
-								 "\x01\x01"
-								 "\x83\x71"
-								 "\x83\x71"
-								 "\xC1\x71"
-								 "\x83\x71"
-								 "\x83\x71"
-								 "\x83\x71"
-								 "\x83\x71";
-
-	uint8_t * keyconfig = 		"\x13\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x3C\x00"
-								"\x3C\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x3C\x00"
-								"\x13\x00"
-								"\x33\x00";
+uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
 
 
 	struct atecc_slot_config *c;
@@ -588,10 +556,28 @@ uint8_t get_readable_config(){
 
 #endif
 
-	result = memcmp(slot_arr, slotconfig, sizeof(slot_arr));
+	if (out_keyconfig != NULL)
+		memmove(out_keyconfig, key_arr, 16*2);
+
+	if (out_slotconfig != NULL)
+		memmove(out_slotconfig, slot_arr, 16*2);
+
+	return 0;
+}
+
+uint8_t compare_binary_readable_configs(){
+	struct atecc_slot_config slot_arr[16];
+	struct atecc_key_config key_arr[16];
+	uint8_t result;
+
+	get_readable_config(slot_arr, key_arr);
+
+	result = sizeof(slot_arr);
+	result = memcmp(slot_arr, binary_slot_configs, sizeof(slot_arr));
 	if (result != 0) return 1;
 
-	result = memcmp(key_arr, keyconfig, sizeof(key_arr));
+	result = sizeof(key_arr);
+	result = memcmp(key_arr, binary_key_configs, sizeof(key_arr));
 	if (result != 0) return 2;
 
 	return 0;
