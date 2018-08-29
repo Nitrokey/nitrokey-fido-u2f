@@ -66,6 +66,7 @@
 
 #define U2FHID_INIT_PAYLOAD_SIZE  (HID_PACKET_SIZE-7)
 #define U2FHID_CONT_PAYLOAD_SIZE  (HID_PACKET_SIZE-5)
+// 7609 = 128*U2FHID_CONT_PAYLOAD_SIZE+1*U2FHID_INIT_PAYLOAD_SIZE (128 continuation frames + 1 init frame)
 #define U2FHID_MAX_PAYLOAD_SIZE  (7609)
 
 #define U2FHID_LEN(req) (*(uint16_t*)&req->pkt.init.bcnth)

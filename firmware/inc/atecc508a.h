@@ -165,7 +165,7 @@ struct atecc_key_config
 };
 
 extern struct SHA_context{
-	uint8_t shabuf[70]; //FIXME see, why buffer is 70 instead of 64; correct, if overextended
+	uint8_t shabuf[70]; //64 bytes of data + 6 bytes of response header
 	uint8_t shaoffset;
 	uint8_t SHA_FLAGS;
 	uint8_t SHA_HMAC_KEY;

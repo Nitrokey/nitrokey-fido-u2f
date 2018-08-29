@@ -70,6 +70,7 @@ static struct hid_layer_param
 	// total length of response in bytes
 	uint16_t res_len;
 
+	// FIXME Maximum request size seem to be U2F Auth 66 (header) + 128 (key handle) = 194 bytes. Decrease size, if needed.
 	#define BUFFER_SIZE (270)
 	uint8_t buffer[BUFFER_SIZE];
 
@@ -261,6 +262,9 @@ static void stamp_error(uint32_t cid, uint8_t err)
 	del_cid(cid);
 }
 
+/**
+ * Buffers incoming requests. E.g. Authentication request with 64 key handle size takes 130 bytes -> 3 HID frames.
+ */
 static void start_buffering(struct u2f_hid_msg* req)
 {
 	_hid_in_session = 1;
