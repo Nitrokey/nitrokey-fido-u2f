@@ -71,6 +71,7 @@ static uint8_t * binary_key_configs =
  */
 void dump_config(uint8_t* buf)
 {
+#ifdef U2F_PRINT
 	uint8_t i,j;
 	uint16_t crc = 0;
 	struct atecc_response res;
@@ -84,9 +85,6 @@ void dump_config(uint8_t* buf)
 	const int slot_config_size = sizeof(struct atecc_slot_config);
 	const int key_config_size = sizeof(struct atecc_key_config);
 
-#ifndef U2F_PRINT
-	return;
-#endif
 
 	u2f_prints("config dump:\r\n");
 	for (i=0; i < 4; i++)
@@ -141,6 +139,7 @@ void dump_config(uint8_t* buf)
 
 #undef _PRINT
 
+#endif
 }
 
 
