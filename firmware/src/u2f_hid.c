@@ -257,7 +257,7 @@ static void stamp_error(uint32_t cid, uint8_t err)
 	res->pkt.init.bcntl = 1;
 
 
-	usb_write(res, HID_PACKET_SIZE);
+	usb_write((uint8_t*)res, HID_PACKET_SIZE);
 	del_cid(cid);
 }
 
@@ -319,7 +319,7 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 			init_res->version_minor = 0;
 			init_res->version_build = 0;
 
-#ifdef U2F_SUPPORT_WINK && CAPABILITY_LOCK
+#ifdef U2F_SUPPORT_WINK and CAPABILITY_LOCK
 			init_res->cflags = CAPABILITY_WINK | CAPABILITY_LOCK;
 #elif U2F_SUPPORT_WINK
 			init_res->cflags = CAPABILITY_WINK;

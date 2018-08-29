@@ -30,6 +30,8 @@
 #include "bsp.h" // used in dump_config()
 #include "i2c.h" // used in dump_config()
 
+#ifdef ATECC_SETUP_DEVICE
+
 static uint8_t * binary_slot_configs =
 						"\x83\x71"
 						"\x81\x01"
@@ -144,7 +146,7 @@ void dump_config(uint8_t* buf)
 }
 
 
-#ifdef ATECC_SETUP_DEVICE
+
 
 uint8_t atecc_setup_config(uint8_t* buf)
 {
