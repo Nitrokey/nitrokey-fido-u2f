@@ -747,7 +747,8 @@ void atecc_setup_device(struct config_msg * msg)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK config failed\r\n");
-					return;
+					usbres.buf[0] = 2;
+					break;
 				}
 			}
 			else
@@ -763,7 +764,8 @@ void atecc_setup_device(struct config_msg * msg)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK data failed\r\n");
-					return;
+					usbres.buf[0] = 3;
+					break;
 				}
 			}
 			else
