@@ -574,7 +574,12 @@ def do_ping(h, num):
 def do_config_test(h):
     h.write([0, commands.U2F_CONFIG_TEST_CONFIG])
     data = read_n_tries(h, 5, 64, 1000)
-    print (len(data), repr(data))
+    if len(data) and data[1] == 0:
+        print('Configuration reported equal.')
+    else:
+        print('Configuration reported different.')
+    print (len(data), repr(data[:2]))
+
 
 def do_fingerprints(h):
     print('Get data slots fingerprints')

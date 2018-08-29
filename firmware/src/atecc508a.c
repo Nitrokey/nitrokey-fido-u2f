@@ -836,7 +836,7 @@ void atecc_setup_device(struct config_msg * msg)
 			break;
 
 		case U2F_CONFIG_TEST_CONFIG:
-			usbres.buf[0] = get_readable_config();
+			usbres.buf[0] = compare_binary_readable_configs();
 			break;
 
 		case U2F_CONFIG_BOOTLOADER_DESTROY:
