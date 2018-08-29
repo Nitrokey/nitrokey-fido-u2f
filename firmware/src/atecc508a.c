@@ -742,6 +742,13 @@ void atecc_setup_device(struct config_msg * msg)
 
 			if (!is_config_locked(buf))
 			{
+				// try to write config beforehand
+				i = atecc_setup_config(appdata.tmp);
+				if (i != 0){
+					usbres.buf[0] = 4;
+					break;
+				}
+
 				if (atecc_send_recv(ATECC_CMD_LOCK,
 						ATECC_LOCK_CONFIG, crc, NULL, 0,
 						buf, sizeof(buf), NULL))
