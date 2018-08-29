@@ -267,6 +267,7 @@ static void stamp_error(uint32_t cid, uint8_t err)
  */
 static void start_buffering(struct u2f_hid_msg* req)
 {
+	memset(hid_layer.buffer, 0, sizeof(hid_layer.buffer));
 	_hid_in_session = 1;
 	hid_layer.bytes_buffered = U2FHID_INIT_PAYLOAD_SIZE;
 	hid_layer.req_len = U2FHID_LEN(req);
