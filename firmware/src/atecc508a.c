@@ -699,7 +699,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 	switch(usb_msg_in->cmd)
 	{
-#ifndef _PRODUCTION_RELEASE
+#ifdef ATECC_PASSTHROUGH
 		case U2F_CONFIG_ATECC_PASSTHROUGH:
 		{
 			atecc_cmd* cmd = (atecc_cmd*)usb_msg_in->buf;
