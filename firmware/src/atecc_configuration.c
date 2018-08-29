@@ -183,9 +183,6 @@ uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
 	c = slot_arr;
 	d = key_arr;
 
-#define READABLE_CONFIG
-#ifdef READABLE_CONFIG
-
 	// Slot config = 0;
 	// hex = 8371;
 	c->writeconfig = 7;
@@ -552,8 +549,6 @@ uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t * out_keyconfig){
 	d->keytype = 4;
 	d->pubinfo = 1;
 	d->private = 1;
-
-#endif
 
 	if (out_keyconfig != NULL)
 		memmove(out_keyconfig, key_arr, 16*2);
