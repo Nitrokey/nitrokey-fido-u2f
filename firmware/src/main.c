@@ -184,10 +184,13 @@ int16_t main(void) {
 		{
 			u2f_printx("error: ", 1, (uint16_t)error);
 
-//			for (i=0; i<0x400;i++)                    // wipe ram
-//			{
-//				*(clear++) = 0x0;
-//			}
+			clear = 0;
+			for (i=0; i<2048; i++)                    // wipe ram
+			{
+				if (clear == &clear || clear == &i)
+					continue;
+				*(clear++) = 0;
+			}
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
