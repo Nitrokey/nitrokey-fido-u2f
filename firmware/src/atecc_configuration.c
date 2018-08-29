@@ -25,9 +25,9 @@
  */
 
 #include "atecc508a.h"
-#include <string.h> // for memset
-#include "bsp.h"
-#include "i2c.h"
+#include <string.h> // memset()
+#include "bsp.h" // used in dump_config()
+#include "i2c.h" // used in dump_config()
 
 static uint8_t * binary_slot_configs =
 						"\x83\x71"
