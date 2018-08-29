@@ -735,6 +735,7 @@ void atecc_setup_device(struct config_msg * msg)
 			u2f_prints("U2F_CONFIG_IS_CONFIGURED\r\n");
 			usbres.buf[0] = 1;
 			break;
+
 		case U2F_CONFIG_LOCK:
 			crc = *(uint16_t*)msg->buf;
 			usbres.buf[0] = 1;
