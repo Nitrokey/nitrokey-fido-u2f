@@ -46,7 +46,6 @@ void _eeprom_write(uint16_t addr, uint8_t * buf, uint8_t len, uint8_t flags);
 #define EEPROM_LAST_PAGE_NUM		(EEPROM_PAGE_COUNT-1)
 // 0x8000 -> 20kB
 #define EEPROM_DATA_START 			(EEPROM_KB_START(20))
-// 2*36 bytes
 // pages are 512-bytes each, required to be written separately
 // FIXME allocate all constants on one page (36 + 36 + 16)
 #define EEPROM_DATA_MASKS 			EEPROM_DATA_START
