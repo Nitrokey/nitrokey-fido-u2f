@@ -145,7 +145,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 	if (control == U2F_AUTHENTICATE_CHECK)
 	{
 		u2f_hid_set_len(U2F_SW_LENGTH);
-		if (u2f_appid_eq(req->kh, req->app) == 0)
+		if (u2f_appid_eq(req->key_handle, req->application) == 0)
 		{
 			return U2F_SW_CONDITIONS_NOT_SATISFIED;
 		}
@@ -155,15 +155,15 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 		}
 	}
 
-	if(req->khl != U2F_KEY_HANDLE_SIZE){
+	if(req->key_handle_length != U2F_KEY_HANDLE_SIZE){
 		u2f_hid_set_len(2);
 		return U2F_SW_WRONG_LENGTH;
 	}
 
 	if 	(
 			control != U2F_AUTHENTICATE_SIGN ||
-			u2f_appid_eq(req->kh, req->app) != 0 ||		// Order of checks is important
-			u2f_load_key(req->kh, req->app) != 0
+			u2f_appid_eq(req->key_handle, req->application) != 0 ||		// Order of checks is important
+			u2f_load_key(req->key_handle, req->application) != 0
 		)
 	{
 		u2f_hid_set_len(U2F_SW_LENGTH);
@@ -181,14 +181,14 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 	counter = u2f_count();
 
     u2f_sha256_start_default();
-    u2f_sha256_update(req->app,sizeof(req->app));
+    u2f_sha256_update(req->application,sizeof(req->application));
     u2f_sha256_update(&users_presence_flag,1);
     u2f_sha256_update((uint8_t *)&counter,4);
     u2f_sha256_update(req->challenge,sizeof(req->challenge));
 
     u2f_sha256_finish();
 
-    if (u2f_ecdsa_sign((uint8_t*)req, req->kh, req->app) == -1)
+    if (u2f_ecdsa_sign((uint8_t*)req, req->key_handle, req->application) == -1)
 	{
     	return U2F_SW_OPERATION_FAILED; //FIXME custom error code - change to any from spec?
 	}
@@ -219,7 +219,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
         return U2F_SW_CONDITIONS_NOT_SATISFIED;
     }
 
-    status_code = u2f_new_keypair(key_handle, req->app, pubkey);
+    status_code = u2f_new_keypair(key_handle, req->application, pubkey);
 	if (status_code != 0)
     {
 		u2f_hid_set_len(U2F_SW_LENGTH);
@@ -228,14 +228,14 @@ static int16_t u2f_register(struct u2f_register_request * req)
 
     u2f_sha256_start_default();
     u2f_sha256_update(i,1);
-    u2f_sha256_update(req->app,sizeof(req->app));
-    u2f_sha256_update(req->chal,sizeof(req->chal));
+    u2f_sha256_update(req->application,sizeof(req->application));
+    u2f_sha256_update(req->challenge,sizeof(req->challenge));
     u2f_sha256_update(key_handle,sizeof(key_handle));
     u2f_sha256_update(i+1,1);
     u2f_sha256_update(pubkey,sizeof(pubkey));
     u2f_sha256_finish();
     
-    if (u2f_ecdsa_sign((uint8_t*)req, U2F_ATTESTATION_HANDLE, req->app) == -1)
+    if (u2f_ecdsa_sign((uint8_t*)req, U2F_ATTESTATION_HANDLE, req->application) == -1)
 	{
     	return U2F_SW_WRONG_DATA;
 	}
