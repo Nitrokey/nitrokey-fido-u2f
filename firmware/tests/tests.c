@@ -26,19 +26,17 @@
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  */
-#include <SI_EFM8UB1_Register_Enums.h>
-#include <stdio.h>
-#include <stdint.h>
 #include "app.h"
+
+#ifdef ENABLE_TESTS
+
+#include <SI_EFM8UB3_Register_Enums.h>
+#include <stdint.h>
 #include "bsp.h"
 #include "i2c.h"
 #include "atecc508a.h"
 #include "eeprom.h"
 #include "tests.h"
-
-
-#ifdef ENABLE_TESTS
-
 
 static void PRINT(const char * s)
 {
