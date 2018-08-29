@@ -106,16 +106,16 @@ struct u2f_ec_point
 
 struct u2f_register_request
 {
-    uint8_t chal[U2F_CHALLENGE_SIZE];
-    uint8_t app[U2F_APPLICATION_SIZE];
+    uint8_t challenge[U2F_CHALLENGE_SIZE];
+    uint8_t application[U2F_APPLICATION_SIZE];
 };
 
 struct u2f_authenticate_request
 {
     uint8_t challenge[U2F_CHALLENGE_SIZE];
-    uint8_t app[U2F_APPLICATION_SIZE];
-    uint8_t khl;
-    uint8_t kh[U2F_KEY_HANDLE_SIZE];
+    uint8_t application[U2F_APPLICATION_SIZE];
+    uint8_t key_handle_length;
+    uint8_t key_handle[U2F_KEY_HANDLE_SIZE];
 } ;
 
 // u2f_request send a U2F message to U2F protocol
