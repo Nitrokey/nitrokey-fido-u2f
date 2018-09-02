@@ -156,7 +156,7 @@ int16_t main(void) {
 #ifndef ATECC_SETUP_DEVICE
 				struct CID* cid = NULL;
 				cid = get_cid(hid_msg->cid);
-				if (!cid->busy) {                          // There is no ongoing U2FHID transfer
+				if (cid == NULL || !cid->busy) {                          // There is no ongoing U2FHID transfer
 					if (!custom_command(hid_msg)) {
 						u2f_hid_request(hid_msg);
 					}
