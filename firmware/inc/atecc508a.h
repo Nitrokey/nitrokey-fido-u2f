@@ -58,6 +58,12 @@
 	#define ATECC_RW_DATA 				0x02
 	#define ATECC_RW_EXT 				0x80
 	// P2 read addr
+	#define ATECC_RW_LENGTH				(4)
+	#define ATECC_RW_LENGTH_EXT			(32)
+	#define ATECC_RW_SUFFIX_LENGTH		(4)
+
+#define ATECC_CONFIG_LOCK_VALUE_POS 	(86)
+#define ATECC_CONFIG_LOCK_CONFIG_POS 	(87)
 
 #define ATECC_CMD_WRITE 				0x12
 	// P1 same as for read
@@ -83,7 +89,7 @@
 	#define ATECC_LOCK_DATA_OTP 		0x01
 	#define ATECC_LOCK_SLOT 			0x02
 	#define ATECC_LOCK_SLOTNUM(x) 		(((x)&0xf)<<2)
-	#define ATECC_LOCK_IGNORE_SUMMARY 	0x08
+	#define ATECC_LOCK_IGNORE_SUMMARY 	0x80
 	// P2 is CRC or 0
 
 #define ATECC_CMD_GENKEY 				0x40
@@ -123,6 +129,7 @@
 	#define ATECC_PRIVWRITE_ENC			0x40
 	// P2 is keyid
 
+#include <stdint.h>
 
 struct atecc_response
 {
@@ -157,14 +164,27 @@ struct atecc_key_config
 	uint8_t x509id : 2;
 };
 
-extern uint8_t SHA_FLAGS;
-extern uint8_t SHA_HMAC_KEY;
+extern struct SHA_context{
+	uint8_t shabuf[70]; //64 bytes of data + 6 bytes of response header
+	uint8_t shaoffset;
+	uint8_t SHA_FLAGS;
+	uint8_t SHA_HMAC_KEY;
+} sha_ctx;
+
 extern struct  atecc_response res_digest;
 
-extern void u2f_sha256_start  ();
+// ATECC's configuration
+extern uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t slotconfig_len,
+		uint8_t * out_keyconfig,  uint8_t keyconfig_len);
+extern uint8_t atecc_setup_config(uint8_t* buf);
+extern void dump_config(uint8_t* buf);
+extern uint8_t compare_binary_readable_configs(uint8_t* out_config, uint8_t out_len);
+
+extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
+extern void u2f_sha256_start_default();
 extern void u2f_sha256_update (uint8_t * buf, uint8_t len);
-extern void u2f_sha256_finish ();
 extern void compute_key_hash  (uint8_t * key, uint16_t mask, int slot);
+extern struct atecc_response* u2f_sha256_finish();
 extern int atecc_prep_encryption();
 extern int atecc_privwrite(uint16_t keyslot, uint8_t * key, uint16_t mask, uint8_t * digest);
 

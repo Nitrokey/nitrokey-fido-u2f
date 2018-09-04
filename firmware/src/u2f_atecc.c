@@ -41,12 +41,9 @@
 #include "atecc508a.h"
 
 
-static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle);
+static void gen_u2f_zero_tag(uint8_t * out_dst, uint8_t * appid, uint8_t * handle);
 
 static struct u2f_hid_msg res;
-static uint8_t* resbuf = (uint8_t*)&res;
-static uint8_t resseq = 0;
-static uint8_t serious = 0;
 
 
 void u2f_response_writeback(uint8_t * buf, uint16_t len)
@@ -130,7 +127,8 @@ int8_t u2f_get_user_feedback()
 }
 
 
-int8_t u2f_ecdsa_sign(uint8_t * dest, uint8_t * handle, uint8_t * appid)
+// FIXME unused appid
+int8_t u2f_ecdsa_sign(uint8_t * out_dest, uint8_t * handle, uint8_t * appid)
 {
 	struct atecc_response res;
 	uint16_t slot = U2F_TEMP_KEY_SLOT;
@@ -145,13 +143,13 @@ int8_t u2f_ecdsa_sign(uint8_t * dest, uint8_t * handle, uint8_t * appid)
 	{
 		return -1;
 	}
-	memmove(dest, res.buf, 64);
+	memmove(out_dest, res.buf, 64);
 	return 0;
 }
 
 
 // bad if this gets interrupted
-int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
+int8_t u2f_new_keypair(uint8_t * out_handle, uint8_t * appid, uint8_t * out_pubkey)
 {
 	struct atecc_response res;
 	uint8_t private_key[36];
@@ -167,15 +165,12 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 		return -1; //U2F_SW_CUSTOM_RNG_GENERATION
 	}
 
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update(appid,32);
 	u2f_sha256_update(res.buf,4);
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
-	memmove(handle, res.buf, 4);  // size of key handle must be 36
+	memmove(out_handle, res.buf, 4);  // size of key handle must be 36
 
 	memset(private_key,0,4);
 	memmove(private_key+4, res_digest.buf, 32);
@@ -184,10 +179,10 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 
 	watchdog();
 	compute_key_hash(private_key, EEPROM_DATA_WMASK, U2F_TEMP_KEY_SLOT);
-	memmove(handle+4, res_digest.buf, 32);  // size of key handle must be 36+28
+	memmove(out_handle+4, res_digest.buf, 32);  // size of key handle must be 36+28
 
 
-	if ( atecc_privwrite(U2F_TEMP_KEY_SLOT, private_key, EEPROM_DATA_WMASK, handle+4) != 0)
+	if ( atecc_privwrite(U2F_TEMP_KEY_SLOT, private_key, EEPROM_DATA_WMASK, out_handle+4) != 0)
 	{
 		return -2; // U2F_SW_CUSTOM_PRIVWRITE
 	}
@@ -201,10 +196,10 @@ int8_t u2f_new_keypair(uint8_t * handle, uint8_t * appid, uint8_t * pubkey)
 		return -3; // U2F_SW_CUSTOM_GENKEY
 	}
 
-	memmove(pubkey, res.buf, 64);
+	memmove(out_pubkey, res.buf, 64);
 
 	// the + 28/U2F_KEY_HANDLE_ID_SIZE
-	gen_u2f_zero_tag(handle + U2F_KEY_HANDLE_KEY_SIZE, appid, handle);
+	gen_u2f_zero_tag(out_handle + U2F_KEY_HANDLE_KEY_SIZE, appid, out_handle);
 
 	return 0;
 }
@@ -214,12 +209,9 @@ int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 	uint8_t private_key[36];
 
 	watchdog();
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update(appid,32);
 	u2f_sha256_update(handle,4);
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
 	memset(private_key,0,4);
@@ -230,11 +222,9 @@ int8_t u2f_load_key(uint8_t * handle, uint8_t * appid)
 	return atecc_privwrite(U2F_TEMP_KEY_SLOT, private_key, EEPROM_DATA_WMASK, handle+4);
 }
 
-static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle)
+static void gen_u2f_zero_tag(uint8_t * out_dst, uint8_t * appid, uint8_t * handle)
 {
-	SHA_HMAC_KEY = U2F_DEVICE_KEY_SLOT;
-	SHA_FLAGS = ATECC_SHA_HMACSTART;
-	u2f_sha256_start();
+	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 
 	u2f_sha256_update(handle,U2F_KEY_HANDLE_KEY_SIZE);
 
@@ -244,10 +234,9 @@ static void gen_u2f_zero_tag(uint8_t * dst, uint8_t * appid, uint8_t * handle)
 
 	u2f_sha256_update(appid,32);
 
-	SHA_FLAGS = ATECC_SHA_HMACEND;
 	u2f_sha256_finish();
 
-	if (dst) memmove(dst, res_digest.buf, U2F_KEY_HANDLE_ID_SIZE);
+	if (out_dst) memmove(out_dst, res_digest.buf, U2F_KEY_HANDLE_ID_SIZE);
 }
 
 int8_t u2f_appid_eq(uint8_t * handle, uint8_t * appid)

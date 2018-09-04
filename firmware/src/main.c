@@ -42,9 +42,6 @@
 #include "u2f.h"
 #include "tests.h"
 
-#define ms_since(ms,num) (((uint16_t)get_ms() - (ms)) >= num ? ((ms=(uint16_t)get_ms())):0)
-
-
 data struct APP_DATA appdata;
 
 uint8_t error;
@@ -91,13 +88,8 @@ void set_app_u2f_hid_msg(struct u2f_hid_msg * msg )
 }
 
 int16_t main(void) {
-	uint16_t ms_heart;
-	uint16_t ms_wink;
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
-    #ifdef U2F_BLINK_ERRORS
-	uint16_t ii;
-    #endif
 
 	enter_DefaultMode_from_RESET();
 
@@ -121,15 +113,20 @@ int16_t main(void) {
 
 	if (RSTSRC & RSTSRC_WDTRSF__SET)
 	{
-		//error = ERROR_DAMN_WATCHDOG;
 		u2f_prints("r");
 	}
 	u2f_prints("U2F ZERO ==================================\r\n");
 
+#ifndef _PRODUCTION_RELEASE
 	run_tests();
+#endif
 	BUTTON_RESET_OFF();
 	led_off();
+
+#ifndef ATECC_SETUP_DEVICE
+	// test for locked configuration only in production mode
 	atecc_setup_init(appdata.tmp);
+#endif
 
 	led_blink(1, 0);                                   // Blink once after successful startup
 
@@ -166,11 +163,11 @@ int16_t main(void) {
 				} else {
 					u2f_hid_request(hid_msg);
 				}
-#else
+#else //!ATECC_SETUP_DEVICE
 				if (!custom_command(hid_msg)) {
 					 u2f_hid_request(hid_msg);
 				}
-#endif
+#endif //ATECC_SETUP_DEVICE
 				if (state == APP_HID_MSG) {                // The USB msg doesnt ask a special app state
 					state = APP_NOTHING;	               // We can go back to idle
 				}
@@ -186,44 +183,34 @@ int16_t main(void) {
 		if (error)
 		{
 			u2f_printx("error: ", 1, (uint16_t)error);
-#ifdef U2F_BLINK_ERRORS
-			for (ms_grad=0; ms_grad < 8; ms_grad++)
-			{
-				if (error & (1<<ms_grad))
-				{
-					rgb_hex(U2F_DEFAULT_COLOR_INPUT_SUCCESS);
-				}
-				else
-				{
-					rgb_hex(U2F_DEFAULT_COLOR_ERROR);
-				}
-				u2f_delay(400);
-				rgb_hex(0);
-				u2f_delay(100);
 
+			clear = 0;
+			for (i=0; i<2048; i++)                    // wipe ram
+			{
+				if (clear == &clear || clear == &i)
+					continue;
+				*(clear++) = 0;
 			}
-#else
-#ifndef ON_ERROR_RESET_IMMEDIATELY
-			//LedBlink(LED_BLINK_NUM_INF, 375);       // Blink wont work because of the following
-//			for (i=0; i<0x400;i++)                    // wipe ram
-//			{
-//				*(clear++) = 0x0;
-//			}
-			u2f_hid_set_len(2);
-			i = 0x1300 + error;
-			u2f_response_writeback(&i,2);
-			watchdog();
-#endif
-#endif
 
 #ifdef ON_ERROR_RESET_IMMEDIATELY
 			u2f_delay(100);
 			RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
-#else
+#endif
+
+#ifdef U2F_BLINK_ERRORS
+			LedBlink(LED_BLINK_NUM_INF, 50);
+			// wait for watchdog to reset
+			while(1)
+			{
+				led_blink_manager();
+			}
+
+#else //!U2F_BLINK_ERRORS
 			// wait for watchdog to reset
 			while(1)
 				;
-#endif
+#endif //U2F_BLINK_ERRORS
+
 		}
 	}
 }

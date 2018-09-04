@@ -84,9 +84,9 @@ void usb_write  (uint8_t* buf, uint8_t len);
 
 #else
 
-	#define u2f_printx(x)
-	#define u2f_printb(x)
-	#define u2f_printlx(x)
+	#define u2f_printx(x, y, z)
+	#define u2f_printb(x, y, z)
+	#define u2f_printlx(x, y, z, zz)
 	#define u2f_printl(x)
 	#define u2f_printd(x)
 	#define u2f_prints(x)
@@ -97,7 +97,7 @@ void usb_write  (uint8_t* buf, uint8_t len);
 	#define u2f_putlx(x)
 
 	#define putf(x)
-	#define dump_hex(x)
+	#define dump_hex(x, y)
 
 #endif
 

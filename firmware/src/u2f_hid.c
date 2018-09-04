@@ -70,6 +70,9 @@ static struct hid_layer_param
 	// total length of response in bytes
 	uint16_t res_len;
 
+	// FIXME Maximum allowed request size seem to be U2F Auth 66 (challenge+header) + 256 (key handle) = 322 bytes
+	// We use 64 bytes key handle, hence 130 bytes will suffice.
+	// Decrease size, if needed.
 	#define BUFFER_SIZE (270)
 	uint8_t buffer[BUFFER_SIZE];
 
@@ -257,12 +260,16 @@ static void stamp_error(uint32_t cid, uint8_t err)
 	res->pkt.init.bcntl = 1;
 
 
-	usb_write(res, HID_PACKET_SIZE);
+	usb_write((uint8_t*)res, HID_PACKET_SIZE);
 	del_cid(cid);
 }
 
+/**
+ * Buffers incoming requests. E.g. Authentication request with 64 key handle size takes 130 bytes -> 3 HID frames.
+ */
 static void start_buffering(struct u2f_hid_msg* req)
 {
+	memset(hid_layer.buffer, 0, sizeof(hid_layer.buffer));
 	_hid_in_session = 1;
 	hid_layer.bytes_buffered = U2FHID_INIT_PAYLOAD_SIZE;
 	hid_layer.req_len = U2FHID_LEN(req);
@@ -287,7 +294,7 @@ static int buffer_request(struct u2f_hid_msg* req)
 static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 {
 	uint16_t len = 0;
-	uint8_t secs;
+	uint8_t seconds;
 	struct u2f_hid_init_response * init_res = appdata.tmp;
 
 	switch(hid_layer.current_cmd)
@@ -303,11 +310,14 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 
 			if (hid_layer.current_cid == U2FHID_BROADCAST)
 			{
+				//FIXME dead code
 				if (hid_layer.current_cid == 0)
 				{
 					set_app_error(ERROR_OUT_OF_CIDS);
 					goto fail;
 				}
+				//dead code end
+
 				init_res->cid = get_new_cid();
 			}
 			else
@@ -319,11 +329,11 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 			init_res->version_minor = 0;
 			init_res->version_build = 0;
 
-#ifdef U2F_SUPPORT_WINK && CAPABILITY_LOCK
+#if defined(U2F_SUPPORT_WINK) && defined(CAPABILITY_LOCK)
 			init_res->cflags = CAPABILITY_WINK | CAPABILITY_LOCK;
-#elif U2F_SUPPORT_WINK
+#elif defined(U2F_SUPPORT_WINK)
 			init_res->cflags = CAPABILITY_WINK;
-#elif CAPABILITY_LOCK
+#elif defined(CAPABILITY_LOCK)
 			init_res->cflags = CAPABILITY_LOCK;
 #else
 			init_res->cflags = 0;
@@ -423,17 +433,17 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 #ifdef U2F_SUPPORT_HID_LOCK
 		case U2FHID_LOCK:
 
-			secs = req->pkt.init.payload[0];
-			if (secs > 10)
+			seconds = req->pkt.init.payload[0];
+			if (seconds > 10)
 			{
 				stamp_error(hid_layer.current_cid, ERR_INVALID_PAR);
 			}
 			else
 			{
-				if (secs)
+				if (seconds)
 				{
 					_hid_lock_cid = hid_layer.current_cid;
-					_hid_lockt = get_ms() + 1000 * secs;
+					_hid_lockt = get_ms() + 1000 * seconds;
 
 				}
 				else
@@ -487,10 +497,9 @@ void u2f_hid_request(struct u2f_hid_msg* req)
 	// Error checking
 	if ((U2FHID_IS_INIT(req->pkt.init.cmd)))
 	{
-		if (U2FHID_LEN(req) > 7609)
+		if (U2FHID_LEN(req) > U2FHID_MAX_PAYLOAD_SIZE)
 		{
 			stamp_error(req->cid, ERR_INVALID_LEN);
-
 			return;
 		}
 		if (req->pkt.init.cmd != U2FHID_INIT && req->cid != hid_layer.current_cid && u2f_hid_busy())

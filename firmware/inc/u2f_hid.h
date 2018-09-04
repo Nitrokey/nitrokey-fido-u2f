@@ -66,6 +66,7 @@
 
 #define U2FHID_INIT_PAYLOAD_SIZE  (HID_PACKET_SIZE-7)
 #define U2FHID_CONT_PAYLOAD_SIZE  (HID_PACKET_SIZE-5)
+// 7609 = 128*U2FHID_CONT_PAYLOAD_SIZE+1*U2FHID_INIT_PAYLOAD_SIZE (128 continuation frames + 1 init frame)
 #define U2FHID_MAX_PAYLOAD_SIZE  (7609)
 
 #define U2FHID_LEN(req) (*(uint16_t*)&req->pkt.init.bcnth)
@@ -146,12 +147,6 @@ void u2f_hid_flush();
 void u2f_hid_request(struct u2f_hid_msg* req);
 
 struct CID* get_cid(uint32_t cid);
-
-// app_wink blink a light on the platform
-// must be implemented elsewhere for specific platform used
-//  @color optional hex color
-extern void app_wink(uint32_t color);
-
 
 // set_app_error set global error value
 // must be implemented elsewhere for specific platform used

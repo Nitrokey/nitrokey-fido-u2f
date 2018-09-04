@@ -35,6 +35,7 @@
 
 #define U2F_EC_POINT_SIZE					32
 #define U2F_EC_PUBKEY_SIZE					65
+#define U2F_EC_PUBKEY_RAW_SIZE				64
 #define U2F_APDU_SIZE                       7
 #define U2F_CHALLENGE_SIZE                  32
 #define U2F_APPLICATION_SIZE                32
@@ -45,7 +46,8 @@
 #define U2F_KEY_HANDLE_SIZE                 (U2F_KEY_HANDLE_KEY_SIZE+U2F_KEY_HANDLE_ID_SIZE)
 #define U2F_REGISTER_REQUEST_SIZE           (U2F_CHALLENGE_SIZE+U2F_APPLICATION_SIZE)
 #define U2F_MAX_REQUEST_PAYLOAD             (1 + U2F_CHALLENGE_SIZE+U2F_APPLICATION_SIZE + 1 + U2F_KEY_HANDLE_SIZE)
-
+// See FIDO U2F Raw Message Formats, chapter 4.3 Registration Response Message: Success
+#define U2F_REGISTER_RESERVED_BYTE			(0x05)
 
 // U2F native commands
 #define U2F_REGISTER 						0x01
@@ -72,6 +74,8 @@
 #define U2F_SW_CLASS_NOT_SUPPORTED          0x6E00
 #define U2F_SW_WRONG_PAYLOAD	            0x6a80
 #define U2F_SW_INSUFFICIENT_MEMORY          0x9210
+#define U2F_SW_LENGTH						(2)
+#define U2F_SW_OPERATION_FAILED				(U2F_SW_WRONG_DATA+0x20)
 
 // Custom errors
 #define U2F_SW_CUSTOM_RNG_GENERATION        0x920f
@@ -93,25 +97,18 @@ struct u2f_request_apdu
     uint8_t payload[U2F_MAX_REQUEST_PAYLOAD];
 };
 
-struct u2f_ec_point
-{
-    uint8_t fmt;
-    uint8_t x[U2F_EC_POINT_SIZE];
-    uint8_t y[U2F_EC_POINT_SIZE];
-};
-
 struct u2f_register_request
 {
-    uint8_t chal[U2F_CHALLENGE_SIZE];
-    uint8_t app[U2F_APPLICATION_SIZE];
+    uint8_t challenge[U2F_CHALLENGE_SIZE];
+    uint8_t application[U2F_APPLICATION_SIZE];
 };
 
 struct u2f_authenticate_request
 {
-    uint8_t chal[U2F_CHALLENGE_SIZE];
-    uint8_t app[U2F_APPLICATION_SIZE];
-    uint8_t khl;
-    uint8_t kh[U2F_KEY_HANDLE_SIZE];
+    uint8_t challenge[U2F_CHALLENGE_SIZE];
+    uint8_t application[U2F_APPLICATION_SIZE];
+    uint8_t key_handle_length;
+    uint8_t key_handle[U2F_KEY_HANDLE_SIZE];
 } ;
 
 // u2f_request send a U2F message to U2F protocol
@@ -151,17 +148,17 @@ extern int8_t u2f_get_user_feedback();
 void clear_button_press();
 
 // u2f_sha256_start callback for u2f to start a sha256 hash
-extern void u2f_sha256_start();
+extern void u2f_sha256_start_default();
+extern void u2f_sha256_start(uint8_t hmac_key, uint8_t sha_flags);
 
 // u2f_sha256_update callback for u2f to add data to started sha256 state
 //  @buf data to update hash with
 //  @len length of buf in bytes
 extern void u2f_sha256_update(uint8_t * buf, uint8_t len);
 
-// u2f_sha256_finish callback for u2f to havest hash from
-//  @buf final data to update hash with
-//  @len length of buf in bytes
-extern void u2f_sha256_finish();
+// u2f_sha256_finish callback for u2f to harvest hash from
+// returns pointer to result buffer via atecc_response
+extern struct atecc_response* u2f_sha256_finish();
 
 
 // u2f_ecdsa_sign callback for u2f to compute signature on the previously computed sha256 digest
