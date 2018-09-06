@@ -340,7 +340,7 @@ def do_configure(h,pemkey):
     config = array.array('B',data[2:2+l]).tostring() + config[l:]
     print( 'conf: ', binascii.hexlify(config))
     time.sleep(0.250)
-
+    assert (l == 15)
 
     crc = get_crc(config)
     print( 'crc is ', [hex(x) for x in crc])
