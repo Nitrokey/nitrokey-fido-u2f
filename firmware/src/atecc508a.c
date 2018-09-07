@@ -537,22 +537,6 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 #endif
 
 
-void atecc_setup_init(uint8_t * buf)
-{
-	dump_config(buf);
-	if (!is_config_locked(buf))
-	{
-		// change watchdog period to 13s
-		WDTCN = 7;
-		u2f_prints("setting up config...\r\n");
-		atecc_setup_config(buf);
-	}
-	else
-	{
-		u2f_prints("already locked\r\n");
-	}
-}
-
 /**
  * Generates 32 bytes of random data.
  * out_buf has to be at least 32 bytes sized.

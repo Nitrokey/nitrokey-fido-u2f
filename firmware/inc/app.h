@@ -176,7 +176,6 @@ void set_app_state(APP_STATE s);
 #include "atecc508a.h"
 
 void atecc_setup_device(struct config_msg * msg);
-void atecc_setup_init(uint8_t * buf);
 
 
 void u2f_config_request();
@@ -193,7 +192,6 @@ void u2f_config_request();
 #else
 
 #define atecc_setup_device(x)
-#define atecc_setup_init(x)
 #endif
 
 
