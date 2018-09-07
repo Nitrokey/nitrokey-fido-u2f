@@ -665,6 +665,7 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 #endif
 }
 
+#ifdef ATECC_PASSTHROUGH
 typedef struct atecc_command{
 	uint8_t opcode;
 	uint8_t P1;
@@ -672,6 +673,7 @@ typedef struct atecc_command{
 	uint8_t data_length;
 	uint8_t buf[64-4];
 } atecc_cmd;
+#endif
 
 // buf should be at least 40 bytes
 void atecc_setup_device(struct config_msg * usb_msg_in)
