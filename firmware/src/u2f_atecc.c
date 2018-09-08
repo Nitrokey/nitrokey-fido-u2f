@@ -73,16 +73,16 @@ void clear_button_press(){
 	led_off();
 }
 
-static uint32_t last_succesfull_feedback = 0;
 
 int8_t u2f_get_user_feedback()
 {
 	uint32_t t;
 	uint8_t user_presence = 0;
 
+	if (button_press_is_consumed())
+		return 1;
+
 	clear_button_press();
-	if (get_ms() - last_succesfull_feedback < 1000)
-		return 1; //time between requests too short, returning user not present
 
 	led_blink(LED_BLINK_NUM_INF, 375);
 	watchdog();
@@ -110,6 +110,7 @@ int8_t u2f_get_user_feedback()
 	{
 		// Button has been pushed in time
 		user_presence = 1;
+		button_press_set_consumed();
 		led_off();
 #ifdef SHOW_TOUCH_REGISTERED
 		t = get_ms();
@@ -126,9 +127,6 @@ int8_t u2f_get_user_feedback()
 		user_presence = 0;                                     // Return error code
 	}
 
-	clear_button_press();
-	if (user_presence)
-		last_succesfull_feedback = get_ms();
 
 	return user_presence? 0 : 1;
 }
