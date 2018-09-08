@@ -56,6 +56,7 @@
 
 //#define DISABLE_WATCHDOG
 //#define FAKE_TOUCH
+//#define DEBUG_GATHER_ATECC_ERRORS
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
 #define ATECC_SETUP_DEVICE
@@ -70,6 +71,7 @@
 //#define U2F_BLINK_ERRORS
 
 #ifdef _PRODUCTION_RELEASE
+	#undef DEBUG_GATHER_ATECC_ERRORS
 	#undef FAKE_TOUCH
 	#undef SHOW_TOUCH_REGISTERED
 	#undef DISABLE_WATCHDOG
@@ -174,7 +176,6 @@ void set_app_state(APP_STATE s);
 #include "atecc508a.h"
 
 void atecc_setup_device(struct config_msg * msg);
-void atecc_setup_init(uint8_t * buf);
 
 
 void u2f_config_request();
@@ -191,7 +192,6 @@ void u2f_config_request();
 #else
 
 #define atecc_setup_device(x)
-#define atecc_setup_init(x)
 #endif
 
 

@@ -187,8 +187,10 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 							uint8_t rxlen, struct atecc_response* res)
 {
 	uint8_t errors = 0;
+#ifdef DEBUG_GATHER_ATECC_ERRORS
 	uint16_t errarr[20]; //store error codes for debugging
 	memset(errarr, 0, sizeof(errarr));
+#endif
 	atecc_used = 1;
 	atecc_wake();
 	u2f_delay(5);
@@ -197,7 +199,9 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 	set_app_error(ERROR_NOTHING);
 	while(atecc_send(cmd, p1, p2, tx, txlen) == -1)
 	{
+#ifdef DEBUG_GATHER_ATECC_ERRORS
 		errarr[errors] = 0x1000+get_app_error();
+#endif
 		errors++;
 		if (errors > 8)
 		{
@@ -206,7 +210,9 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 	}
 	while(atecc_recv(rx,rxlen, res) == -1)
 	{
+#ifdef DEBUG_GATHER_ATECC_ERRORS
 		errarr[errors] = 0x2000+get_app_error();
+#endif
 		errors++;
 		if (errors > 16)
 		{
@@ -531,22 +537,6 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 #endif
 
 
-void atecc_setup_init(uint8_t * buf)
-{
-	dump_config(buf);
-	if (!is_config_locked(buf))
-	{
-		// change watchdog period to 13s
-		WDTCN = 7;
-		u2f_prints("setting up config...\r\n");
-		atecc_setup_config(buf);
-	}
-	else
-	{
-		u2f_prints("already locked\r\n");
-	}
-}
-
 /**
  * Generates 32 bytes of random data.
  * out_buf has to be at least 32 bytes sized.
@@ -675,6 +665,7 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 #endif
 }
 
+#ifdef ATECC_PASSTHROUGH
 typedef struct atecc_command{
 	uint8_t opcode;
 	uint8_t P1;
@@ -682,6 +673,7 @@ typedef struct atecc_command{
 	uint8_t data_length;
 	uint8_t buf[64-4];
 } atecc_cmd;
+#endif
 
 // buf should be at least 40 bytes
 void atecc_setup_device(struct config_msg * usb_msg_in)

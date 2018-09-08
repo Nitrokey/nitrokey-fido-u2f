@@ -123,11 +123,6 @@ int16_t main(void) {
 	BUTTON_RESET_OFF();
 	led_off();
 
-#ifndef ATECC_SETUP_DEVICE
-	// test for locked configuration only in production mode
-	atecc_setup_init(appdata.tmp);
-#endif
-
 	led_blink(1, 0);                                   // Blink once after successful startup
 
 	while (1) {

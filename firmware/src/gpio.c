@@ -40,6 +40,7 @@ typedef enum {
 	BST_UNPRESSED,
 	BST_PRESSED_RECENTLY,
 	BST_PRESSED_REGISTERED,
+	BST_PRESSED_CONSUMED,
 
 	BST_MAX_NUM
 } BUTTON_STATE_T;
@@ -63,7 +64,10 @@ void button_manager (void) {                          // Requires at least a 750
 				    button_state = BST_PRESSED_REGISTERED; // Update button state
 				}
 		    }break;
-		    default: {}break;
+		    case BST_PRESSED_CONSUMED:
+		    	break;
+		    default:
+		    	break;
 		}
 	} else {                                          // Button is unprssed
 		button_state = BST_UNPRESSED;                  // Update button state
@@ -72,6 +76,18 @@ void button_manager (void) {                          // Requires at least a 750
 
 uint8_t button_get_press (void) {
 	return ((button_state == BST_PRESSED_REGISTERED)? 1 : 0);
+}
+
+uint8_t button_press_in_progress(void){
+	return ((button_state == BST_PRESSED_RECENTLY)? 1 : 0);
+}
+
+void button_press_set_consumed(void){
+	button_state = BST_PRESSED_CONSUMED;
+}
+
+uint8_t button_press_is_consumed(void){
+	return ((button_state == BST_PRESSED_CONSUMED)? 1 : 0);
 }
 
 

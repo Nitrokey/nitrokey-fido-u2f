@@ -62,27 +62,32 @@ void u2f_response_start()
 	watchdog();
 }
 
+static uint32_t last_button_cleared_time = 0;
+
 void clear_button_press(){
+	if (get_ms() - last_button_cleared_time < 10*1000)
+		return;
+	last_button_cleared_time = get_ms();
+
 	led_on();
 	BUTTON_RESET_ON();
 	do {
-		watchdog();
 		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
 	} while (IS_BUTTON_PRESSED()); // Wait to release button
 	BUTTON_RESET_OFF();
 	led_off();
 }
 
-static uint32_t last_succesfull_feedback = 0;
 
 int8_t u2f_get_user_feedback()
 {
 	uint32_t t;
 	uint8_t user_presence = 0;
 
+	if (button_press_is_consumed())
+		return 1;
+
 	clear_button_press();
-	if (get_ms() - last_succesfull_feedback < 1000)
-		return 1; //time between requests too short, returning user not present
 
 	led_blink(LED_BLINK_NUM_INF, 375);
 	watchdog();
@@ -92,7 +97,8 @@ int8_t u2f_get_user_feedback()
 	{
 		led_blink_manager();                               // Run led driver to ensure blinking
         button_manager();                                 // Run button driver
-		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT)    // 3 secs elapsed without button press
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT    // 3 secs elapsed without button press
+				&& !button_press_in_progress())			// Button press has not been started
 			break;                                    // Timeout
 		u2f_delay(10);
 		watchdog();
@@ -109,6 +115,7 @@ int8_t u2f_get_user_feedback()
 	{
 		// Button has been pushed in time
 		user_presence = 1;
+		button_press_set_consumed();
 		led_off();
 #ifdef SHOW_TOUCH_REGISTERED
 		t = get_ms();
@@ -125,9 +132,6 @@ int8_t u2f_get_user_feedback()
 		user_presence = 0;                                     // Return error code
 	}
 
-	clear_button_press();
-	if (user_presence)
-		last_succesfull_feedback = get_ms();
 
 	return user_presence? 0 : 1;
 }
