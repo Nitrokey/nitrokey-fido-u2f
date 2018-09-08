@@ -62,7 +62,13 @@ void u2f_response_start()
 	watchdog();
 }
 
+static uint32_t last_button_cleared_time = 0;
+
 void clear_button_press(){
+	if (get_ms() - last_button_cleared_time < 10*1000)
+		return;
+	last_button_cleared_time = get_ms();
+
 	led_on();
 	BUTTON_RESET_ON();
 	do {
