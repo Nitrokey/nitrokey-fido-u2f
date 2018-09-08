@@ -74,6 +74,10 @@ uint8_t button_get_press (void) {
 	return ((button_state == BST_PRESSED_REGISTERED)? 1 : 0);
 }
 
+uint8_t button_press_in_progress(void){
+	return ((button_state == BST_PRESSED_RECENTLY)? 1 : 0);
+}
+
 
 void led_on (void) {
 	led_blink_num = 0;                                  // Stop ongoing blinking

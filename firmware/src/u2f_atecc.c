@@ -92,7 +92,8 @@ int8_t u2f_get_user_feedback()
 	{
 		led_blink_manager();                               // Run led driver to ensure blinking
         button_manager();                                 // Run button driver
-		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT)    // 3 secs elapsed without button press
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT    // 3 secs elapsed without button press
+				&& !button_press_in_progress())			// Button press has not been started
 			break;                                    // Timeout
 		u2f_delay(10);
 		watchdog();

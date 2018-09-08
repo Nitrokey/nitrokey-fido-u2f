@@ -29,6 +29,7 @@
 
 void button_manager (void);
 uint8_t button_get_press (void);
+uint8_t button_press_in_progress(void);
 
 void led_on (void);
 void led_off (void);
