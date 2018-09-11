@@ -30,10 +30,9 @@
 #include "app.h"
 #include "u2f_hid.h"
 
-#define U2F_CUSTOM_GET_RNG		0x21
-#define U2F_CUSTOM_SEED_RNG		0x22
-#define U2F_CUSTOM_WIPE_KEYS	0x23
-#define U2F_CUSTOM_WINK			0x24
+#define U2F_CUSTOM_GET_RNG		(U2FHID_VENDOR_FIRST+0)
+#define U2F_CUSTOM_SEED_RNG		(U2FHID_VENDOR_FIRST+1)
+#define U2F_CUSTOM_WINK			(U2FHID_VENDOR_FIRST+2)
 
 
 
