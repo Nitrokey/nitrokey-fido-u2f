@@ -565,18 +565,29 @@ typedef enum {
 	M_RKEY
 } MaskType;
 
+typedef enum {
+	GM_ERR_SUCCESS,
+	GM_ERR_SMALL_BUFFER,
+	GM_ERR_RNG,
+	GM_ERR_KEY_WRITE
+} GM_Errors;
+
+
 /**
  * Generate key mask.
- * output has to be at least 64 bytes sized.
- * wkey bool 1:generate and write wkey, 0: generate rkey
+ * Output has to be at least 64 bytes sized.
+ * mtype MaskType M_WKEY:generate and write wkey, M_RKEY: generate rkey
  */
-static void generate_mask(uint8_t *output, MaskType mtype){
+static uint8_t generate_mask(uint8_t *output, MaskType mtype, uint8_t output_size){
 	u2f_prints("generating mask ... ");	dump_hex(&wkey,1);
 
-	if (generate_random_data(output+32) != 0){
+	if (output_size < 64)
+		return GM_ERR_SMALL_BUFFER;
+
+	if (generate_random_data(output+32, 32) != 0){
 		u2f_prints("failed\r\n");
 		output[0] = 0;
-		return;
+		return GM_ERR_RNG;
 	}
 	u2f_prints("generated random output+32: "); dump_hex(output+32,32);
 
@@ -591,7 +602,7 @@ static void generate_mask(uint8_t *output, MaskType mtype){
 				output, 32, NULL) != 0)
 		{
 			u2f_prints("writing master key/wkey failed\r\n");
-			return;
+			return GM_ERR_KEY_WRITE;
 		}
 	}
 
@@ -622,6 +633,7 @@ static void generate_mask(uint8_t *output, MaskType mtype){
 	u2f_prints("generated key mask2 output: "); dump_hex(output+32,8);
 
 	u2f_prints("generated key mask: "); dump_hex(output,32+8);
+	return GM_ERR_SUCCESS;
 }
 
 void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
@@ -676,6 +688,21 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 #endif
 }
 
+#define ASD_ERR_SUCCESS		1
+
+static uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
+	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
+
+	generate_mask(appdata.tmp, M_RKEY, sizeof(appdata.tmp));
+	memmove(device_configuration.RMASK,appdata.tmp,36);
+
+	write_masks();
+	read_masks();
+	u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
+	return ASD_ERR_SUCCESS;
+}
+
 #ifdef ATECC_PASSTHROUGH
 typedef struct atecc_command{
 	uint8_t opcode;
@@ -713,7 +740,6 @@ static uint8_t write_and_lock_config(uint16_t crc, uint8_t* buf, uint8_t buf_siz
 }
 
 // buf should be at least 40 bytes
-#define ASD_ERR_SUCCESS		1
 void atecc_setup_device(struct config_msg * usb_msg_in)
 {
 	struct atecc_response res;
@@ -801,24 +827,17 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			break;
 
 		case U2F_CONFIG_LOAD_RMASK_KEY:
-			u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
-			u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
-
-			generate_mask(appdata.tmp, M_RKEY);
-			memmove(device_configuration.RMASK,appdata.tmp,36);
-
-			write_masks();
-			read_masks();
-			u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
-			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
+			usb_msg_out.buf[0] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
 			memmove(usb_msg_out.buf+1,device_configuration.RMASK,36);
+#endif
 			break;
 
 		case U2F_CONFIG_LOAD_WRITE_KEY:
 			u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
 			u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
 
-			generate_mask(appdata.tmp, M_WKEY);
+			generate_mask(appdata.tmp, M_WKEY, sizeof(appdata.tmp));
 			memmove(write_key,appdata.tmp,36);
 			memmove(device_configuration.WMASK,appdata.tmp,36);
 
@@ -836,7 +855,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 #ifndef _PRODUCTION_RELEASE
 		case U2F_CONFIG_GET_SLOTS_FINGERPRINTS:
-			usb_msg_out.buf[0] = 0;
+			usb_msg_out.buf[0] = ASD_ERR_OTHER;
 
 			for (i=0; i<16; i++){
 				u2f_sha256_start(i, ATECC_SHA_HMACSTART);
