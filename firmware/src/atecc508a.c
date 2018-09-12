@@ -687,7 +687,7 @@ typedef struct atecc_command{
 #define ASD_ERR_OTHER			0
 #define ASD_ERR_INVALID_CMD		0
 #define ASD_ERR_PRIVWRITE		0
-static uint8_t write_and_lock_config(uint16_t* crc, uint8_t* buf){
+static uint8_t write_and_lock_config(uint16_t crc, uint8_t* buf, uint8_t buf_size){
 	int i;
 	// change watchdog period to 13s
 	WDTCN = 7;
@@ -699,7 +699,7 @@ static uint8_t write_and_lock_config(uint16_t* crc, uint8_t* buf){
 
 	if (atecc_send_recv(ATECC_CMD_LOCK,
 			ATECC_LOCK_CONFIG, crc, NULL, 0,
-			buf, sizeof(buf), NULL))
+			buf, buf_size, NULL))
 	{
 		u2f_prints("ATECC_CMD_LOCK config failed\r\n");
 		return ASD_ERR_LOCK;
@@ -767,7 +767,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 			if (!is_config_locked(buf))
 			{
-				usb_msg_out.buf[0] = write_and_lock_config(&crc, &buf);
+				usb_msg_out.buf[0] = write_and_lock_config(crc, buf, sizeof(buf));
 				if (usb_msg_out.buf[0] != 0){
 					break;
 				}
