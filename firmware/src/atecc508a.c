@@ -676,6 +676,28 @@ typedef struct atecc_command{
 } atecc_cmd;
 #endif
 
+#define WALC_ERR_WRITE		4
+#define WALC_ERR_LOCK		2
+static uint8_t write_and_lock_config(uint16_t* crc, uint8_t* buf){
+	int i;
+	// change watchdog period to 13s
+	WDTCN = 7;
+	// try to write config beforehand
+	i = atecc_setup_config(appdata.tmp);
+	if (i != 0){
+		return WALC_ERR_WRITE;
+	}
+
+	if (atecc_send_recv(ATECC_CMD_LOCK,
+			ATECC_LOCK_CONFIG, crc, NULL, 0,
+			buf, sizeof(buf), NULL))
+	{
+		u2f_prints("ATECC_CMD_LOCK config failed\r\n");
+		return WALC_ERR_LOCK;
+	}
+	return 0;
+}
+
 // buf should be at least 40 bytes
 void atecc_setup_device(struct config_msg * usb_msg_in)
 {
@@ -735,21 +757,8 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 			if (!is_config_locked(buf))
 			{
-				// change watchdog period to 13s
-				WDTCN = 7;
-				// try to write config beforehand
-				i = atecc_setup_config(appdata.tmp);
-				if (i != 0){
-					usb_msg_out.buf[0] = 4;
-					break;
-				}
-
-				if (atecc_send_recv(ATECC_CMD_LOCK,
-						ATECC_LOCK_CONFIG, crc, NULL, 0,
-						buf, sizeof(buf), NULL))
-				{
-					u2f_prints("ATECC_CMD_LOCK config failed\r\n");
-					usb_msg_out.buf[0] = 2;
+				usb_msg_out.buf[0] = write_and_lock_config(&crc, &buf);
+				if (usb_msg_out.buf[0] != 0){
 					break;
 				}
 			}
