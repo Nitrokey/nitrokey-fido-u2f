@@ -676,8 +676,12 @@ typedef struct atecc_command{
 } atecc_cmd;
 #endif
 
-#define ASD_ERR_WRITE		4
-#define ASD_ERR_LOCK		2
+#define ASD_ERR_WRITE			4
+#define ASD_ERR_LOCK			2
+#define ASD_ERR_DATALOCK		3
+#define ASD_ERR_OTHER			0
+#define ASD_ERR_INVALID_CMD		0
+#define ASD_ERR_PRIVWRITE		0
 static uint8_t write_and_lock_config(uint16_t* crc, uint8_t* buf){
 	int i;
 	// change watchdog period to 13s
@@ -776,7 +780,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK data failed\r\n");
-					usb_msg_out.buf[0] = 3;
+					usb_msg_out.buf[0] = ASD_ERR_DATALOCK;
 					break;
 				}
 			}
@@ -796,7 +800,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			write_masks();
 			read_masks();
 			u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			memmove(usb_msg_out.buf+1,device_configuration.RMASK,36);
 			break;
 
@@ -811,7 +815,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			write_masks();
 			read_masks();
 			u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			memmove(usb_msg_out.buf + 1 , device_configuration.WMASK, 36);
 			break;
 
@@ -832,7 +836,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 						memmove(usb_msg_out.buf+i*3+1, res_digest.buf, 3);
 			}
 
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			set_app_error(ERROR_NOTHING);
 			break;
 #endif
@@ -843,7 +847,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			//reusing trans_key buffer for the attestation key upload
 			memset(trans_key,0,36);
 			memmove(trans_key+4,usb_msg_in->buf,32);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			compute_key_hash(trans_key,  EEPROM_DATA_WMASK, U2F_ATTESTATION_KEY_SLOT);
 
 			u2f_prints("write key: "); dump_hex(write_key,36);
@@ -854,7 +858,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 //				key, and SlotConfig.IsSecret must be set to one, or else this command will return an error. If the slot is
 //				individually locked using SlotLocked, then this command will also return an error.
 				u2f_prints("load attest key failed\r\n");
-				usb_msg_out.buf[0] = 0;
+				usb_msg_out.buf[0] = ASD_ERR_PRIVWRITE;
 			}
 
 			break;
@@ -867,12 +871,12 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-0));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-1));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-2));
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			led_blink(1, 100);
 			break;
 		default:
 			u2f_printb("invalid command: ",1,usb_msg_in->cmd);
-			usb_msg_out.buf[0] = 0;
+			usb_msg_out.buf[0] = ASD_ERR_INVALID_CMD;
 	}
 
 	usb_write((uint8_t*)&usb_msg_out, HID_PACKET_SIZE);
