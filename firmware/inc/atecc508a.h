@@ -207,4 +207,8 @@ int8_t atecc_write_eeprom(uint8_t base, uint8_t offset, uint8_t* srcbuf, uint8_t
 
 int8_t read_masks();
 
+uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen);
+uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize);
+uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize);
+
 #endif /* ATECC508A_H_ */

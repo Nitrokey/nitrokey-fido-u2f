@@ -636,21 +636,20 @@ static uint8_t generate_mask(uint8_t *output, MaskType mtype, uint8_t output_siz
 	return GM_ERR_SUCCESS;
 }
 
-void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
+uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen){
 	u2f_prints("generating device key ... ");
 
 	if (generate_random_data(trans_key, sizeof(trans_key)) == 0){
 		u2f_prints("succeed\r\n");
-		output[0] = 1;
 	} else {
 		u2f_prints("failed\r\n");
-		output[0] = 0;
-		return;
+		return 0;
 	}
 
 #ifndef _PRODUCTION_RELEASE
 	u2f_prints("device key: "); dump_hex(trans_key,32);
-	memmove(output+1, trans_key, 16);
+	if (output_debug != NULL)
+		memmove(output_debug, trans_key, 16);
 #endif
 
 	compute_write_hash(trans_key,  EEPROM_DATA_WMASK, ATECC_EEPROM_DATA_SLOT(U2F_DEVICE_KEY_SLOT));
@@ -667,9 +666,8 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 		appdata.tmp, 32+32,
 		buf, buflen, NULL) != 0)
 	{
-		output[0] = 2; //failed, stage 2, key writing
 		u2f_prints("writing device key failed\r\n");
-		return;
+		return 2; //failed, stage 2, key writing
 	}
 	u2f_prints("writing device key succeed\r\n");
 
@@ -677,21 +675,26 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 	generate_random_data(buf, buflen);
 	eeprom_erase(EEPROM_DATA_U2F_CONST);
 	eeprom_write(EEPROM_DATA_U2F_CONST, buf, U2F_CONST_LENGTH);
+
 #ifndef _PRODUCTION_RELEASE
+	//write constants to debug out
 	u2f_prints("u2f_zero_const: "); dump_hex(buf,U2F_CONST_LENGTH);
-	memmove(output+1+32, buf, 16);
+	if (output_debug != NULL)
+		memmove(output_debug+32, buf, 16);
 
 	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
 	u2f_sha256_update("successful write test");
 	u2f_sha256_finish();
-	memmove(output+1+16, res_digest.buf, 16);
+	if (output_debug != NULL)
+		memmove(output_debug+16, res_digest.buf, 16);
 #endif
+	return 1;
 }
 
 #define ASD_ERR_SUCCESS		1
 #define ASD_ERR_SMALL_BUFFER	10
 
-static uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
 
 	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
@@ -706,7 +709,7 @@ static uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	return ASD_ERR_SUCCESS;
 }
 
-static uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
 
 	u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
@@ -861,7 +864,8 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 		case U2F_CONFIG_GEN_DEVICE_KEY:
 			u2f_prints("U2F_CONFIG_GEN_DEVICE_KEY\r\n");
-			generate_device_key(usb_msg_out.buf, appdata.tmp, sizeof(appdata.tmp));
+			usb_msg_out.buf[0] = generate_device_key(usb_msg_out.buf+1,
+					appdata.tmp, sizeof(appdata.tmp));
 			break;
 
 #ifndef _PRODUCTION_RELEASE
