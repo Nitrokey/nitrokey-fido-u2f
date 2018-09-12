@@ -555,12 +555,17 @@ uint8_t generate_random_data(uint8_t *out_buf){
 	return 1;
 }
 
+typedef enum {
+	M_WKEY,
+	M_RKEY
+} MaskType;
+
 /**
  * Generate key mask.
  * output has to be at least 64 bytes sized.
  * wkey bool 1:generate and write wkey, 0: generate rkey
  */
-void generate_mask(uint8_t *output, uint8_t wkey){
+static void generate_mask(uint8_t *output, MaskType mtype){
 	u2f_prints("generating mask ... ");	dump_hex(&wkey,1);
 
 	if (generate_random_data(output+32) != 0){
@@ -570,7 +575,7 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 	}
 	u2f_prints("generated random output+32: "); dump_hex(output+32,32);
 
-	if (wkey == 1){
+	if (mtype == M_WKEY){
 		// generation of wkey (write key) is requested, it needs to be saved in a raw form first
 		memmove(trans_key, output+32, 32);
 		u2f_prints("generated trans_key: "); dump_hex(trans_key,32);
@@ -794,7 +799,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
 			u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
 
-			generate_mask(appdata.tmp, 0);
+			generate_mask(appdata.tmp, M_RKEY);
 			memmove(device_configuration.RMASK,appdata.tmp,36);
 
 			write_masks();
@@ -808,7 +813,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
 			u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
 
-			generate_mask(appdata.tmp, 1);
+			generate_mask(appdata.tmp, M_WKEY);
 			memmove(write_key,appdata.tmp,36);
 			memmove(device_configuration.WMASK,appdata.tmp,36);
 
