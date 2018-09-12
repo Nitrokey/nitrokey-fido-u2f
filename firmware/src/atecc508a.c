@@ -692,6 +692,8 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 #define ASD_ERR_SMALL_BUFFER	10
 
 static uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
+
 	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
 	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
 
