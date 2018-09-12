@@ -43,6 +43,15 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 
 	switch(msg->pkt.init.cmd)
 	{
+
+		case U2F_CUSTOM_FACTORY_RESET:
+			//WKEY
+			//RKEY
+			//DEVICE_KEY
+
+
+			break;
+
 #ifdef U2F_SUPPORT_RNG_CUSTOM
 		case U2F_CUSTOM_GET_RNG:
 			if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
