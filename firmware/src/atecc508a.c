@@ -689,17 +689,34 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 }
 
 #define ASD_ERR_SUCCESS		1
+#define ASD_ERR_SMALL_BUFFER	10
 
 static uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
 	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
 
-	generate_mask(appdata.tmp, M_RKEY, sizeof(appdata.tmp));
-	memmove(device_configuration.RMASK,appdata.tmp,36);
+	generate_mask(temporary_buffer, M_RKEY, bufsize);
+	memmove(device_configuration.RMASK,temporary_buffer,bufsize);
 
 	write_masks();
 	read_masks();
 	u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
+	return ASD_ERR_SUCCESS;
+}
+
+static uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
+
+	u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
+	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
+
+	generate_mask(temporary_buffer, M_WKEY, bufsize);
+	memmove(write_key,temporary_buffer,36);
+	memmove(device_configuration.WMASK,temporary_buffer,36);
+
+	write_masks();
+	read_masks();
+	u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
 	return ASD_ERR_SUCCESS;
 }
 
@@ -834,18 +851,10 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			break;
 
 		case U2F_CONFIG_LOAD_WRITE_KEY:
-			u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
-			u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
-
-			generate_mask(appdata.tmp, M_WKEY, sizeof(appdata.tmp));
-			memmove(write_key,appdata.tmp,36);
-			memmove(device_configuration.WMASK,appdata.tmp,36);
-
-			write_masks();
-			read_masks();
-			u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
-			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
+			usb_msg_out.buf[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
 			memmove(usb_msg_out.buf + 1 , device_configuration.WMASK, 36);
+#endif
 			break;
 
 		case U2F_CONFIG_GEN_DEVICE_KEY:
