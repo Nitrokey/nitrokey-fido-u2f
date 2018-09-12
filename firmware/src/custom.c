@@ -40,16 +40,20 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 {
 	struct atecc_response res;
 	uint8_t ec;
+	uint8_t *out = msg->pkt.init.payload;
 
 	switch(msg->pkt.init.cmd)
 	{
 
 		case U2F_CUSTOM_FACTORY_RESET:
-			//WKEY
-			//RKEY
-			//DEVICE_KEY
+			memset(msg->pkt.init.payload, 0, sizeof(msg->pkt.init.payload));
 
+			out[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[1] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[2] = generate_device_key(NULL, appdata.tmp, sizeof(appdata.tmp));
 
+			U2FHID_SET_LEN(msg, 32);
+			usb_write((uint8_t*)msg, 64);
 			break;
 
 #ifdef U2F_SUPPORT_RNG_CUSTOM
