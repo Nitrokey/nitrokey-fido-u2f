@@ -542,8 +542,13 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
  * Generates 32 bytes of random data.
  * out_buf has to be at least 32 bytes sized.
  */
-uint8_t generate_random_data(uint8_t *out_buf){
+static uint8_t generate_random_data(uint8_t *out_buf, uint8_t out_size){
 	struct atecc_response res;
+
+	if (out_size < 32){
+		return 1;
+	}
+
 	if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
 					NULL, 0,
 					appdata.tmp, sizeof(appdata.tmp),
@@ -622,7 +627,7 @@ static void generate_mask(uint8_t *output, MaskType mtype){
 void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 	u2f_prints("generating device key ... ");
 
-	if (generate_random_data(trans_key) == 0){
+	if (generate_random_data(trans_key, sizeof(trans_key)) == 0){
 		u2f_prints("succeed\r\n");
 		output[0] = 1;
 	} else {
@@ -657,7 +662,7 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 	u2f_prints("writing device key succeed\r\n");
 
 	// generate u2f_zero_const
-	generate_random_data(buf);
+	generate_random_data(buf, buflen);
 	eeprom_erase(EEPROM_DATA_U2F_CONST);
 	eeprom_write(EEPROM_DATA_U2F_CONST, buf, U2F_CONST_LENGTH);
 #ifndef _PRODUCTION_RELEASE
