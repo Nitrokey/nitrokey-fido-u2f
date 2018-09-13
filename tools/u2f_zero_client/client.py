@@ -199,6 +199,7 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     ping <bytes count>: test ping capabilities of the device')
     print('     bootloader-destroy: permanently disable the bootloader')
     print('     fingerprints: print data slots fingerprints (debug firmware only)')
+    print('     factory-reset: generate new device key')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -460,7 +461,7 @@ def do_seed(h):
     h.close()
 
 def do_wipe(h):
-    cmd = cmd_prefix + [ commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
     h.write(cmd)
     # print('Press U2F button repeatedly until the LED is no longer red.')
     res = None
@@ -637,7 +638,7 @@ if __name__ == '__main__':
     elif action == 'seed':
         h = open_u2f(SN)
         do_seed(h)
-    elif action == 'factory-reset':
+    elif action in ['factory-reset', 'wipe']:
         h = open_u2f(SN)
         do_wipe(h)
     elif action == 'passt':
