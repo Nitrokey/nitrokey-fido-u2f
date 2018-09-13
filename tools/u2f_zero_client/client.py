@@ -459,19 +459,19 @@ def do_seed(h):
     h.close()
 
 def do_wipe(h):
-    cmd = cmd_prefix + [ commands.U2F_CUSTOM_WIPE, 0,0]
+    cmd = cmd_prefix + [ commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
     h.write(cmd)
-    print( 'Press U2F button repeatedly until the LED is no longer red.')
+    # print('Press U2F button repeatedly until the LED is no longer red.')
     res = None
     while not res:
-        res = h.read(64, 10000)
-    if res[7] != 1:
-        print( 'Wipe failed')
-    else:
-        print( 'Wipe succeeded')
+        res = h.read(64, 20000)
 
+    print(repr(res[4:]))
 
-    h.close()
+    # if res[7] != 1:
+    #     print( 'Wipe failed')
+    # else:
+    #     print( 'Wipe succeeded')
 
 def hexcode2bytes(color):
     h = [ord(x) for x in color.replace('#','').decode('hex')]
@@ -623,7 +623,7 @@ if __name__ == '__main__':
     elif action == 'seed':
         h = open_u2f(SN)
         do_seed(h)
-    elif action == 'wipe':
+    elif action == 'factory-reset':
         h = open_u2f(SN)
         do_wipe(h)
     elif action == 'passt':
