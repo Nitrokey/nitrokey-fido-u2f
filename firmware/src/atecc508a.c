@@ -874,6 +874,16 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			break;
 
 #ifndef _PRODUCTION_RELEASE
+		case U2F_CONFIG_GET_CONSTANTS:
+			usb_msg_out.buf[0] = ASD_ERR_OTHER;
+
+			memmove(usb_msg_out.buf+1, device_configuration.WMASK, 16);
+			memmove(usb_msg_out.buf+1+16, device_configuration.RMASK, 16);
+			eeprom_read(EEPROM_DATA_U2F_CONST, usb_msg_out.buf+1+16+16, 16);
+
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
+			break;
+
 		case U2F_CONFIG_GET_SLOTS_FINGERPRINTS:
 			usb_msg_out.buf[0] = ASD_ERR_OTHER;
 
