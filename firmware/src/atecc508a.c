@@ -566,7 +566,7 @@ typedef enum {
 } MaskType;
 
 typedef enum {
-	GM_ERR_SUCCESS = 0,
+	GM_ERR_SUCCESS = 1,
 	GM_ERR_SMALL_BUFFER,
 	GM_ERR_RNG,
 	GM_ERR_KEY_WRITE
@@ -695,13 +695,15 @@ uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen)
 #define ASD_ERR_SMALL_BUFFER	10
 
 uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	uint8_t err;
 	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
 
 	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
 	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
 
-	generate_mask(temporary_buffer, M_RKEY, bufsize);
-	memmove(device_configuration.RMASK,temporary_buffer,bufsize);
+	err = generate_mask(temporary_buffer, M_RKEY, bufsize);
+	if (err!=GM_ERR_SUCCESS) return err;
+	memmove(device_configuration.RMASK,temporary_buffer,sizeof(device_configuration.RMASK));
 
 	write_masks();
 	read_masks();
@@ -710,14 +712,17 @@ uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 }
 
 uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	uint8_t err;
 	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
 
 	u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
 	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
 
-	generate_mask(temporary_buffer, M_WKEY, bufsize);
-	memmove(write_key,temporary_buffer,36);
-	memmove(device_configuration.WMASK,temporary_buffer,36);
+	err = generate_mask(temporary_buffer, M_WKEY, bufsize);
+	if (err != GM_ERR_SUCCESS) return err;
+
+	memmove(write_key,temporary_buffer,sizeof(device_configuration.WMASK));
+	memmove(device_configuration.WMASK,temporary_buffer, sizeof(device_configuration.WMASK));
 
 	write_masks();
 	read_masks();
