@@ -172,6 +172,7 @@ class commands:
     U2F_CONFIG_GEN_DEVICE_KEY = 0x8c
     U2F_CONFIG_GET_SLOTS_FINGERPRINTS = 0x8d
     U2F_CONFIG_TEST_CONFIG = 0x8e
+    U2F_CONFIG_GET_CONSTANTS = 0x8f
 
     U2F_VENDOR_FIRST = (0x80 | 0x40)
     U2F_VENDOR_LAST = (0x80 | 0x7f)
@@ -596,6 +597,19 @@ def do_fingerprints(h):
     for i in range(16):
         print('{}: {}'.format(i, repr(next_i(data_i, 3))))
     print()
+
+    for i in range(3):
+        h.write([0, commands.U2F_CONFIG_GET_CONSTANTS])
+        data = read_n_tries(h, 5, 64, 2000)
+        if not data:
+            print(".")
+            continue
+        data_i = iter(data)
+        print('status', repr(next_i(data_i, 2)))
+        for i in range(3):
+            print('{}: {}'.format(i, repr(next_i(data_i, 16))))
+        print()
+        return
 
 
 if __name__ == '__main__':
