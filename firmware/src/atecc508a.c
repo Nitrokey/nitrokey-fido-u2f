@@ -561,12 +561,12 @@ static uint8_t generate_random_data(uint8_t *out_buf, uint8_t out_size){
 }
 
 typedef enum {
-	M_WKEY,
+	M_WKEY = 0,
 	M_RKEY
 } MaskType;
 
 typedef enum {
-	GM_ERR_SUCCESS,
+	GM_ERR_SUCCESS = 0,
 	GM_ERR_SMALL_BUFFER,
 	GM_ERR_RNG,
 	GM_ERR_KEY_WRITE
