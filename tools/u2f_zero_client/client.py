@@ -586,10 +586,33 @@ def do_config_test(h):
     print (len(data), repr(data))
 
 
+def send_receive(h, to_send, delay=1000):
+    """
+    Resend command until received proper command id.
+    Use only for read-only functions
+    :param h: device handle, write() function
+    :param to_send: data to send, prefixed with '0' and command id byte
+    :param delay: delay for hidapi to wait for device's response
+    :return: received data from h.read()
+    """
+    cmd = to_send[1]
+
+    for j in range(2):
+        print('s', end='', file=sys.stderr)
+        h.write(to_send)
+        for i in range(10):
+            time.sleep(0.3)
+            print('r', end='', file=sys.stderr)
+            data = read_n_tries(h, 5, 64, delay)
+            if data and data[0] == cmd:
+                print('', file=sys.stderr)
+                return data
+    return None
+
+
 def do_fingerprints(h):
     print('Get data slots fingerprints')
-    h.write([0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
-    data = read_n_tries(h, 5, 64, 1000)
+    data = send_receive(h, [0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
     print (len(data), repr(data))
     if len(data) < 2:
         return
@@ -599,18 +622,14 @@ def do_fingerprints(h):
         print('{}: {}'.format(i, repr(next_i(data_i, 3))))
     print()
 
-    for i in range(3):
-        h.write([0, commands.U2F_CONFIG_GET_CONSTANTS])
-        data = read_n_tries(h, 5, 64, 2000)
-        if not data:
-            print(".")
-            continue
-        data_i = iter(data)
-        print('status', repr(next_i(data_i, 2)))
-        for i in range(3):
-            print('{}: {}'.format(i, repr(next_i(data_i, 16))))
-        print()
+    data = send_receive(h, [0, commands.U2F_CONFIG_GET_CONSTANTS])
+    if not data:
         return
+    data_i = iter(data)
+    print('status', repr(next_i(data_i, 2)))
+    for i in range(3):
+        print('{}: {}'.format(i, repr(next_i(data_i, 16))))
+    print()
 
 
 if __name__ == '__main__':
