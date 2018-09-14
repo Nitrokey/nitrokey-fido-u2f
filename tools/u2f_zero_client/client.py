@@ -185,6 +185,20 @@ class commands:
     U2F_HID_INIT = 0x86
     U2F_HID_PING = 0x81
 
+def safe_ord(d):
+    try:
+        return ord(d)
+    except:
+        return d
+
+def mhex(d):
+    return '{:02X}'.format(d)
+
+def data_to_hex_string(data):
+    hex_chars = map(mhex, map(safe_ord, data))
+    hex_string = " ".join(c for c in hex_chars)
+    return hex_string
+
 
 if len(sys.argv) not in [2,3,4,5,6]:
     print('usage: %s <action> [<arguments>] [-s serial-number]' % sys.argv[0])
@@ -341,7 +355,7 @@ def do_configure(h,pemkey):
         print( 'read %i bytes' % l)
         if data[0] == commands.U2F_CONFIG_GET_SERIAL_NUM:
             break
-    print( data)
+    print(data_to_hex_string(data))
     config = array.array('B',data[2:2+l]).tostring() + config[l:]
     print( 'conf: ', binascii.hexlify(config))
     time.sleep(0.250)
@@ -393,10 +407,10 @@ def do_configure(h,pemkey):
 
     data_i = iter(data)
     next_i(data_i, 2)
-    print('generated device key: ' + repr(next_i(data_i, 16)))
-    print('written device key hash: ' + repr(next_i(data_i, 16)))
-    print('generated u2f_zero_const: ' + repr(next_i(data_i, 16)))
-    print('full response: ' + repr(data))
+    print('generated device key: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('written device key hash: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('generated u2f_zero_const: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('full response: ' + data_to_hex_string(data))
 
 
     print( 'Done.  Erasing bootloader code pages on MCU.')
@@ -465,15 +479,37 @@ def do_wipe(h):
     h.write(cmd)
     # print('Press U2F button repeatedly until the LED is no longer red.')
     res = None
-    while not res:
+
+    while not res or res[4] != commands.U2F_CUSTOM_FACTORY_RESET:
+        time.sleep(.3)
         res = h.read(64, 20000)
 
-    print(repr(res[4:]))
+    print(data_to_hex_string(res))
+    print()
+    res = res[4:]
+    print(data_to_hex_string(res[:6]))
 
-    # if res[7] != 1:
-    #     print( 'Wipe failed')
-    # else:
-    #     print( 'Wipe succeeded')
+    data = iter(res[6:])
+    _data = {}
+    for i in range(3):
+        l = next_i(data, 8)
+        _data[i] = l
+        print(data_to_hex_string(l))
+
+    for i in range(2):
+        l = next_i(data, 8)
+        if not _data[i] == l:
+            print(data_to_hex_string(l))
+
+    for i in range(2):
+        l = next_i(data, 4)
+        if l != [0xFF]*4:
+            print(data_to_hex_string(l))
+
+    if res[3] == 1 and res[4] == 1 and res[5] == 1:
+        print('Wipe succeeded')
+    else:
+        print('Wipe failed')
 
 def hexcode2bytes(color):
     h = [ord(x) for x in color.replace('#','').decode('hex')]
@@ -607,28 +643,30 @@ def send_receive(h, to_send, delay=1000):
             if data and data[0] == cmd:
                 print('', file=sys.stderr)
                 return data
+    print('x', end='', file=sys.stderr)
     return None
 
 
 def do_fingerprints(h):
     print('Get data slots fingerprints')
     data = send_receive(h, [0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
-    print (len(data), repr(data))
+    print (len(data), data_to_hex_string(data))
+    print()
     if len(data) < 2:
         return
     data_i = iter(data)
-    print('status', repr(next_i(data_i, 2)))
+    print('status', data_to_hex_string(next_i(data_i, 2)))
     for i in range(16):
-        print('{}: {}'.format(i, repr(next_i(data_i, 3))))
+        print('{:02}: {}'.format(i, data_to_hex_string(next_i(data_i, 3))))
     print()
 
     data = send_receive(h, [0, commands.U2F_CONFIG_GET_CONSTANTS])
     if not data:
         return
     data_i = iter(data)
-    print('status', repr(next_i(data_i, 2)))
+    print('status', data_to_hex_string(next_i(data_i, 2)))
     for i in range(3):
-        print('{}: {}'.format(i, repr(next_i(data_i, 16))))
+        print('{}: {}'.format(i, data_to_hex_string(next_i(data_i, 16))))
     print()
 
 
