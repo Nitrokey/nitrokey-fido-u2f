@@ -36,6 +36,7 @@
 #include "gpio.h"
 #include "atecc508a.h"
 #include "eeprom.h"
+#include "u2f.h"
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
@@ -48,6 +49,12 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 #ifdef FEAT_FACTORY_RESET
 		case U2F_CUSTOM_FACTORY_RESET:
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+
+			if(u2f_get_user_feedback()){
+				U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+				usb_write((uint8_t*)msg, 64);
+				break;
+			}
 
 			// clear device key explicitly
 			memset(device_configuration.RMASK, 0, sizeof(device_configuration.RMASK));
