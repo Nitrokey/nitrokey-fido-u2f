@@ -825,8 +825,8 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			break;
 
 		case U2F_CONFIG_LOCK:
+			usb_msg_out.buf[0] = 0xFF;
 			crc = *(uint16_t*)usb_msg_in->buf;
-			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			u2f_printx("got crc: ",1,crc);
 
 			if (!is_config_locked(buf))
@@ -857,6 +857,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			{
 				u2f_prints("data already locked\r\n");
 			}
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			break;
 
 		case U2F_CONFIG_LOAD_RMASK_KEY:
