@@ -79,8 +79,7 @@ void clear_button_press(){
 	led_off();
 }
 
-
-int8_t u2f_get_user_feedback()
+static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
 	uint32_t t;
 	uint8_t user_presence = 0;
@@ -90,11 +89,12 @@ int8_t u2f_get_user_feedback()
 
 	clear_button_press();
 
-	led_blink(LED_BLINK_NUM_INF, 375);
+	if (blink == true)
+		led_blink(LED_BLINK_NUM_INF, 375);
 	watchdog();
 
 	t = get_ms();
-	while(button_get_press() == 0)                         // Wait to push button
+	while(button_get_press_state() != target_button_state)	// Wait to push button
 	{
 		led_blink_manager();                               // Run led driver to ensure blinking
         button_manager();                                 // Run button driver
@@ -109,7 +109,7 @@ int8_t u2f_get_user_feedback()
 		}
 
 #ifndef FAKE_TOUCH
-	if (button_get_press() == 1)
+	if (button_get_press_state() == target_button_state)
 #else //FAKE_TOUCH
 	if (true)
 #endif
@@ -119,6 +119,7 @@ int8_t u2f_get_user_feedback()
 		button_press_set_consumed();
 		led_off();
 #ifdef SHOW_TOUCH_REGISTERED
+		//show short confirming animation
 		t = get_ms();
 		while(get_ms() - t < 110){
 			led_on();
@@ -135,6 +136,14 @@ int8_t u2f_get_user_feedback()
 
 
 	return user_presence? 0 : 1;
+}
+
+int8_t u2f_get_user_feedback(){
+	return _u2f_get_user_feedback(BST_PRESSED_REGISTERED, true);
+}
+
+int8_t u2f_get_user_feedback_extended_wipe(){
+	return _u2f_get_user_feedback(BST_PRESSED_REGISTERED_EXT, true);
 }
 
 
