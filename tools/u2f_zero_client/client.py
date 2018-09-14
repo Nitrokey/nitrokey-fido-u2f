@@ -337,9 +337,7 @@ def do_configure(h,pemkey):
 
     config = "\x01\x23\x6d\x10\x00\x00\x50\x00\xd7\x2c\xa5\x71\xee\xc0\x85\x00\xc0\x00\x55\x00\x83\x71\x81\x01\x83\x71\xC1\x01\x83\x71\x83\x71\x83\x71\xC1\x71\x01\x01\x83\x71\x83\x71\xC1\x71\x83\x71\x83\x71\x83\x71\x83\x71\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x55\x55\xff\xff\x00\x00\x00\x00\x00\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x3c\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x33\x00"
 
-
-    h.write([0,commands.U2F_CONFIG_IS_BUILD])
-    data = h.read(64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_IS_BUILD])
     if len(data) >= 2 and data[1] == 1:
         print('Device is configured.')
     else:
@@ -348,40 +346,35 @@ def do_configure(h,pemkey):
 
     time.sleep(0.250)
 
-    h.write([0,commands.U2F_CONFIG_GET_SERIAL_NUM])
-    while True:
-        data = read_n_tries(h,5,64,1000)
-        l = data[1]
-        print( 'read %i bytes' % l)
-        if data[0] == commands.U2F_CONFIG_GET_SERIAL_NUM:
-            break
+    data = send_receive(h, [0,commands.U2F_CONFIG_GET_SERIAL_NUM])
     print(data_to_hex_string(data))
+    l = data[1]  # type: int
+    print('read %i bytes' % l)
     config = array.array('B',data[2:2+l]).tostring() + config[l:]
     print( 'conf: ', binascii.hexlify(config))
     time.sleep(0.250)
     assert (l == 15)
 
     crc = get_crc(config)
-    print( 'crc is ', [hex(x) for x in crc])
-    h.write([0,commands.U2F_CONFIG_LOCK] + crc)
-    data = read_n_tries(h,5,64,1000)
+    print('crc is ', [hex(x) for x in crc])
+
+    data = send_receive(h, [0, commands.U2F_CONFIG_LOCK] +crc)
 
     if data[1] == 1:
-        print( 'locked eeprom with crc ',crc)
+        print('locked eeprom with crc ',crc)
     else:
+        print(data[1])
+        print(data_to_hex_string(data))
         die('not locked')
 
     time.sleep(0.250)
 
-
-    h.write([0,commands.U2F_CONFIG_LOAD_WRITE_KEY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_WRITE_KEY])
     if data[1] != 1:
         print('recv wkey: ' + repr(data))
         die('failed loading write key ({})'.format(data[1]))
 
-    h.write([0,commands.U2F_CONFIG_LOAD_READ_KEY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_READ_KEY])
     if data[1] != 1:
         die('failed loading read key')
 
@@ -391,19 +384,14 @@ def do_configure(h,pemkey):
         die('Incorrect key type.  Must be prime256v1 ECC private key in PEM format.')
 
 
-    h.write([0,commands.U2F_CONFIG_LOAD_ATTEST_KEY] + [ord(x) for x in attestkey.to_string()])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_ATTEST_KEY] + [ord(x) for x in attestkey.to_string()])
     if len(data)<2 or data[1] != 1:
         print(data[:2])
         die('failed loading attestation key')
 
-
-    h.write([0, commands.U2F_CONFIG_GEN_DEVICE_KEY])
-    data = read_n_tries(h, 5, 64, 1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_GEN_DEVICE_KEY])
     if data[1] != 1:
         die('failed generating device key' + repr(data[:2]))
-
-
 
     data_i = iter(data)
     next_i(data_i, 2)
@@ -414,8 +402,8 @@ def do_configure(h,pemkey):
 
 
     print( 'Done.  Erasing bootloader code pages on MCU.')
-    h.write([0,commands.U2F_CONFIG_BOOTLOADER_DESTROY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_BOOTLOADER_DESTROY])
+
     if len(data)<2 or data[1] != 1:
         print(data)
         die('failed to remove the bootloader.')
@@ -655,7 +643,11 @@ def do_fingerprints(h):
     if len(data) < 2:
         return
     data_i = iter(data)
-    print('status', data_to_hex_string(next_i(data_i, 2)))
+    status = next_i(data_i, 2)
+    print('status', data_to_hex_string(status))
+    if status[1] != 1:
+        print('Invalid status')
+        return
     for i in range(16):
         print('{:02}: {}'.format(i, data_to_hex_string(next_i(data_i, 3))))
     print()
