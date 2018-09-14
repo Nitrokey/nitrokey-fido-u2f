@@ -66,7 +66,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 #ifndef _PRODUCTION_RELEASE
 			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8+8+8, 4);
 			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8+8+4, 4);
-#endif
+#endif //#ifndef _PRODUCTION_RELEASE
 			out[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
 			out[1] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
 			out[2] = generate_device_key(NULL, appdata.tmp, sizeof(appdata.tmp));
@@ -101,7 +101,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			}
 
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_RNG_CUSTOM
 #ifdef U2F_SUPPORT_SEED_CUSTOM
 		case U2F_CUSTOM_SEED_RNG:
 			ec = atecc_send_recv(ATECC_CMD_NONCE,ATECC_NONCE_RNG_UPDATE,0,
@@ -112,12 +112,12 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			msg->pkt.init.payload[0] = ec == 0 ? 1 : 0;
 			usb_write((uint8_t*)msg, 64);
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_SEED_CUSTOM
 #ifdef U2F_SUPPORT_WINK
 		case U2F_CUSTOM_WINK:
 			led_blink(5, 300);
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_WINK
 		default:
 			return 0;
 	}
