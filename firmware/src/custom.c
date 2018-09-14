@@ -44,7 +44,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 
 	switch(msg->pkt.init.cmd)
 	{
-
+#ifdef FEAT_FACTORY_RESET
 		case U2F_CUSTOM_FACTORY_RESET:
 			memset(msg->pkt.init.payload, 0, sizeof(msg->pkt.init.payload));
 
@@ -55,7 +55,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			U2FHID_SET_LEN(msg, 32);
 			usb_write((uint8_t*)msg, 64);
 			break;
-
+#endif // #ifdef FEAT_FACTORY_RESET
 #ifdef U2F_SUPPORT_RNG_CUSTOM
 		case U2F_CUSTOM_GET_RNG:
 			if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,

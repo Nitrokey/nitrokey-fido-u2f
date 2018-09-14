@@ -140,6 +140,8 @@ struct atecc_response
 	uint8_t* buf;
 };
 
+#ifdef ATECC_SETUP_DEVICE
+
 struct atecc_slot_config
 {
 	uint8_t readkey : 4;
@@ -164,6 +166,15 @@ struct atecc_key_config
 	uint8_t rfu : 1;
 	uint8_t x509id : 2;
 };
+#endif
+
+#ifdef FEAT_FACTORY_RESET
+// 1 page - 64 bytes
+extern struct DevConf{
+	uint8_t RMASK[36];
+	uint8_t WMASK[36];
+} device_configuration;
+#endif
 
 extern struct SHA_context{
 	uint8_t shabuf[70]; //64 bytes of data + 6 bytes of response header

@@ -42,14 +42,16 @@ struct SHA_context sha_ctx;
 
 struct atecc_response res_digest;
 
-#ifdef ATECC_SETUP_DEVICE
+#ifdef FEAT_FACTORY_RESET
 // 1 page - 64 bytes
 struct DevConf device_configuration;
 
+static uint8_t trans_key[36];
+static uint8_t write_key[36];
 
 int8_t read_masks(){
 	u2f_prints("reading masks -----\r\n");
-	memset(&device_configuration, 42, sizeof(device_configuration));
+	memset(&device_configuration, 0xEE, sizeof(device_configuration));
 	eeprom_read(EEPROM_DATA_RMASK, device_configuration.RMASK, sizeof(device_configuration.RMASK));
 	eeprom_read(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
 	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
@@ -64,7 +66,7 @@ int8_t write_masks(){
 	eeprom_write(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
 	return 0;
 }
-#endif
+#endif // #ifdef FEAT_FACTORY_RESET
 
 uint8_t atecc_used = 0;
 
@@ -469,9 +471,6 @@ static int is_data_locked(uint8_t * buf)
 }
 
 
-static uint8_t trans_key[36];
-static uint8_t write_key[36];
-
 #ifdef ENABLE_TESTS
 void atecc_test_enc_read(uint8_t * buf)
 {
@@ -537,6 +536,9 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 }
 #endif
 
+#endif
+
+#ifdef FEAT_FACTORY_RESET
 
 /**
  * Generates 32 bytes of random data.
@@ -729,6 +731,10 @@ uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
 	return ASD_ERR_SUCCESS;
 }
+
+#endif //#ifdef FEAT_FACTORY_RESET
+
+#ifdef ATECC_SETUP_DEVICE
 
 #ifdef ATECC_PASSTHROUGH
 typedef struct atecc_command{

@@ -59,6 +59,8 @@
 //#define FAKE_TOUCH
 //#define DEBUG_GATHER_ATECC_ERRORS
 
+#define FEAT_FACTORY_RESET
+
 // Uncomment this to make configuration firmware (stage 1 firmware)
 #define ATECC_SETUP_DEVICE
 
@@ -80,6 +82,9 @@
 	#undef U2F_BLINK_ERRORS
 	#undef __BUTTON_TEST__
 	#undef U2F_USING_BOOTLOADER
+	#ifndef FEAT_FACTORY_RESET
+		#define FEAT_FACTORY_RESET
+	#endif
 	#ifndef ATECC_SETUP_DEVICE
 		#define _SECURE_EEPROM
 	#endif
@@ -143,14 +148,6 @@ struct APP_DATA
 #define U2F_CONFIG_GET_SLOTS_FINGERPRINTS	0x8d
 #define U2F_CONFIG_TEST_CONFIG			0x8e
 #define U2F_CONFIG_GET_CONSTANTS		0x8f
-
-#ifdef ATECC_SETUP_DEVICE
-// 1 page - 64 bytes
-extern struct DevConf{
-	uint8_t RMASK[36];
-	uint8_t WMASK[36];
-} device_configuration;
-#endif
 
 struct config_msg
 {
