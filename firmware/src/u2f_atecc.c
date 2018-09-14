@@ -89,6 +89,7 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 
 	clear_button_press();
 
+	led_off();
 	if (blink == true)
 		led_blink(LED_BLINK_NUM_INF, 375);
 	watchdog();
@@ -143,7 +144,7 @@ int8_t u2f_get_user_feedback(){
 }
 
 int8_t u2f_get_user_feedback_extended_wipe(){
-	return _u2f_get_user_feedback(BST_PRESSED_REGISTERED_EXT, true);
+	return _u2f_get_user_feedback(BST_PRESSED_REGISTERED_EXT, false);
 }
 
 
