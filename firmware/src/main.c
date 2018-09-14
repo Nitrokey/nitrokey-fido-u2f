@@ -183,7 +183,7 @@ int16_t main(void) {
 			clear = 0;
 			for (i=0; i<2048; i++)                    // wipe ram
 			{
-				if (clear == &clear || clear == &i)
+				if (clear == &i)
 					continue;
 				*(clear++) = 0;
 			}
