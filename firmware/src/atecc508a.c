@@ -685,7 +685,7 @@ uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen)
 		memmove(output_debug+32, buf, 16);
 
 	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
-	u2f_sha256_update("successful write test");
+	u2f_sha256_update("successful write test", 18);
 	u2f_sha256_finish();
 	if (output_debug != NULL)
 		memmove(output_debug+16, res_digest.buf, 16);
@@ -894,7 +894,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 			for (i=0; i<16; i++){
 				u2f_sha256_start(i, ATECC_SHA_HMACSTART);
-				u2f_sha256_update("successful write test");
+				u2f_sha256_update("successful write test", 18);
 				u2f_sha256_finish();
 				if (get_app_error() == ERROR_NOTHING)
 						memmove(usb_msg_out.buf+i*3+1, res_digest.buf, 3);
