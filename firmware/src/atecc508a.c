@@ -723,7 +723,7 @@ uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
 	err = generate_mask(temporary_buffer, M_WKEY, bufsize);
 	if (err != GM_ERR_SUCCESS) return err;
 
-	memmove(write_key,temporary_buffer,sizeof(device_configuration.WMASK));
+	memmove(write_key,temporary_buffer,sizeof(write_key));
 	memmove(device_configuration.WMASK,temporary_buffer, sizeof(device_configuration.WMASK));
 
 	write_masks();
