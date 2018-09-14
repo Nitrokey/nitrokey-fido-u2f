@@ -70,7 +70,9 @@ void clear_button_press(){
 		return;
 	last_button_cleared_time = get_ms();
 
+#ifndef _PRODUCTION_RELEASE
 	led_on();
+#endif
 	BUTTON_RESET_ON();
 	do {
 		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
@@ -87,11 +89,8 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 	if (button_press_is_consumed())
 		return 1;
 
-	clear_button_press();
-
-	led_off();
 	if (blink == true)
-		led_blink(LED_BLINK_NUM_INF, 375);
+		led_blink(10, 375);
 	watchdog();
 
 	t = get_ms();
@@ -104,6 +103,7 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 			break;                                    // Timeout
 		u2f_delay(10);
 		watchdog();
+		break;
 #ifdef FAKE_TOUCH
 		if (get_ms() - t > 1010) break; //1212
 #endif
@@ -131,7 +131,6 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 		led_off();
 #endif
 	} else {                                          // Button hasnt been pushed within the timeout
-		led_off();
 		user_presence = 0;                                     // Return error code
 	}
 
