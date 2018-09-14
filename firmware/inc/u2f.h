@@ -85,6 +85,8 @@
 
 // Delay in milliseconds to wait for user input
 #define U2F_MS_USER_INPUT_WAIT				3000
+#define U2F_MS_CLEAR_BUTTON_PERIOD			(10*1000)
+
 
 struct u2f_request_apdu
 {
@@ -144,6 +146,7 @@ extern void u2f_response_start();
 // This should block as long as it needs to get feedback
 // before failing.
 extern int8_t u2f_get_user_feedback();
+extern int8_t u2f_get_user_feedback_extended_wipe();
 
 
 void clear_button_press();

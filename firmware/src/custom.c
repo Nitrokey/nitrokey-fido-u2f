@@ -35,14 +35,54 @@
 #include "bsp.h"
 #include "gpio.h"
 #include "atecc508a.h"
+#include "eeprom.h"
+#include "u2f.h"
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
 	struct atecc_response res;
 	uint8_t ec;
+	uint8_t *out = msg->pkt.init.payload;
 
 	switch(msg->pkt.init.cmd)
 	{
+#ifdef FEAT_FACTORY_RESET
+		case U2F_CUSTOM_FACTORY_RESET:
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+
+			if(u2f_get_user_feedback_extended_wipe()){
+				U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+				usb_write((uint8_t*)msg, 64);
+				break;
+			}
+
+			// clear device key explicitly
+			memset(device_configuration.RMASK, 0, sizeof(device_configuration.RMASK));
+			memset(device_configuration.WMASK, 0, sizeof(device_configuration.WMASK));
+			eeprom_erase(EEPROM_DATA_WMASK);
+			eeprom_erase(EEPROM_DATA_RMASK);
+			eeprom_erase(EEPROM_DATA_U2F_CONST);
+
+#ifndef _PRODUCTION_RELEASE
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8+8+8, 4);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8+8+4, 4);
+#endif //#ifndef _PRODUCTION_RELEASE
+			out[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[1] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[2] = generate_device_key(NULL, appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
+			memmove(out+3, device_configuration.WMASK, 8);
+			memmove(out+3+8, device_configuration.RMASK, 8);
+			eeprom_read(EEPROM_DATA_U2F_CONST, out+3+8+8, 8);
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8, 8);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8, 8);
+#endif //#ifndef _PRODUCTION_RELEASE
+
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			break;
+#endif // #ifdef FEAT_FACTORY_RESET
+
 #ifdef U2F_SUPPORT_RNG_CUSTOM
 		case U2F_CUSTOM_GET_RNG:
 			if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
@@ -61,7 +101,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			}
 
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_RNG_CUSTOM
 #ifdef U2F_SUPPORT_SEED_CUSTOM
 		case U2F_CUSTOM_SEED_RNG:
 			ec = atecc_send_recv(ATECC_CMD_NONCE,ATECC_NONCE_RNG_UPDATE,0,
@@ -72,12 +112,12 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			msg->pkt.init.payload[0] = ec == 0 ? 1 : 0;
 			usb_write((uint8_t*)msg, 64);
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_SEED_CUSTOM
 #ifdef U2F_SUPPORT_WINK
 		case U2F_CUSTOM_WINK:
 			led_blink(5, 300);
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_WINK
 		default:
 			return 0;
 	}

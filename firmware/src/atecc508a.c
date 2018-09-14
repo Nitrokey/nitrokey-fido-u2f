@@ -42,14 +42,16 @@ struct SHA_context sha_ctx;
 
 struct atecc_response res_digest;
 
-#ifdef ATECC_SETUP_DEVICE
+#ifdef FEAT_FACTORY_RESET
 // 1 page - 64 bytes
 struct DevConf device_configuration;
 
+static uint8_t trans_key[36];
+static uint8_t write_key[36];
 
 int8_t read_masks(){
 	u2f_prints("reading masks -----\r\n");
-	memset(&device_configuration, 42, sizeof(device_configuration));
+	memset(&device_configuration, 0xEE, sizeof(device_configuration));
 	eeprom_read(EEPROM_DATA_RMASK, device_configuration.RMASK, sizeof(device_configuration.RMASK));
 	eeprom_read(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
 	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
@@ -64,7 +66,7 @@ int8_t write_masks(){
 	eeprom_write(EEPROM_DATA_WMASK, device_configuration.WMASK, sizeof(device_configuration.WMASK));
 	return 0;
 }
-#endif
+#endif // #ifdef FEAT_FACTORY_RESET
 
 uint8_t atecc_used = 0;
 
@@ -469,9 +471,6 @@ static int is_data_locked(uint8_t * buf)
 }
 
 
-static uint8_t trans_key[36];
-static uint8_t write_key[36];
-
 #ifdef ENABLE_TESTS
 void atecc_test_enc_read(uint8_t * buf)
 {
@@ -537,13 +536,21 @@ void atecc_test_signature(int keyslot, uint8_t * buf)
 }
 #endif
 
+#endif
+
+#ifdef FEAT_FACTORY_RESET
 
 /**
  * Generates 32 bytes of random data.
  * out_buf has to be at least 32 bytes sized.
  */
-uint8_t generate_random_data(uint8_t *out_buf){
+static uint8_t generate_random_data(uint8_t *out_buf, uint8_t out_size){
 	struct atecc_response res;
+
+	if (out_size < 32){
+		return 1;
+	}
+
 	if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
 					NULL, 0,
 					appdata.tmp, sizeof(appdata.tmp),
@@ -555,22 +562,38 @@ uint8_t generate_random_data(uint8_t *out_buf){
 	return 1;
 }
 
+typedef enum {
+	M_WKEY = 0,
+	M_RKEY
+} MaskType;
+
+typedef enum {
+	GM_ERR_SUCCESS = 1,
+	GM_ERR_SMALL_BUFFER,
+	GM_ERR_RNG,
+	GM_ERR_KEY_WRITE
+} GM_Errors;
+
+
 /**
  * Generate key mask.
- * output has to be at least 64 bytes sized.
- * wkey bool 1:generate and write wkey, 0: generate rkey
+ * Output has to be at least 64 bytes sized.
+ * mtype MaskType M_WKEY:generate and write wkey, M_RKEY: generate rkey
  */
-void generate_mask(uint8_t *output, uint8_t wkey){
+static uint8_t generate_mask(uint8_t *output, MaskType mtype, uint8_t output_size){
 	u2f_prints("generating mask ... ");	dump_hex(&wkey,1);
 
-	if (generate_random_data(output+32) != 0){
+	if (output_size < 64)
+		return GM_ERR_SMALL_BUFFER;
+
+	if (generate_random_data(output+32, 32) != 0){
 		u2f_prints("failed\r\n");
 		output[0] = 0;
-		return;
+		return GM_ERR_RNG;
 	}
 	u2f_prints("generated random output+32: "); dump_hex(output+32,32);
 
-	if (wkey == 1){
+	if (mtype == M_WKEY){
 		// generation of wkey (write key) is requested, it needs to be saved in a raw form first
 		memmove(trans_key, output+32, 32);
 		u2f_prints("generated trans_key: "); dump_hex(trans_key,32);
@@ -581,7 +604,7 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 				output, 32, NULL) != 0)
 		{
 			u2f_prints("writing master key/wkey failed\r\n");
-			return;
+			return GM_ERR_KEY_WRITE;
 		}
 	}
 
@@ -612,23 +635,23 @@ void generate_mask(uint8_t *output, uint8_t wkey){
 	u2f_prints("generated key mask2 output: "); dump_hex(output+32,8);
 
 	u2f_prints("generated key mask: "); dump_hex(output,32+8);
+	return GM_ERR_SUCCESS;
 }
 
-void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
+uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen){
 	u2f_prints("generating device key ... ");
 
-	if (generate_random_data(trans_key) == 0){
+	if (generate_random_data(trans_key, sizeof(trans_key)) == 0){
 		u2f_prints("succeed\r\n");
-		output[0] = 1;
 	} else {
 		u2f_prints("failed\r\n");
-		output[0] = 0;
-		return;
+		return 0;
 	}
 
 #ifndef _PRODUCTION_RELEASE
 	u2f_prints("device key: "); dump_hex(trans_key,32);
-	memmove(output+1, trans_key, 16);
+	if (output_debug != NULL)
+		memmove(output_debug, trans_key, 16);
 #endif
 
 	compute_write_hash(trans_key,  EEPROM_DATA_WMASK, ATECC_EEPROM_DATA_SLOT(U2F_DEVICE_KEY_SLOT));
@@ -645,26 +668,73 @@ void generate_device_key(uint8_t *output, uint8_t *buf, uint8_t buflen){
 		appdata.tmp, 32+32,
 		buf, buflen, NULL) != 0)
 	{
-		output[0] = 2; //failed, stage 2, key writing
 		u2f_prints("writing device key failed\r\n");
-		return;
+		return 2; //failed, stage 2, key writing
 	}
 	u2f_prints("writing device key succeed\r\n");
 
 	// generate u2f_zero_const
-	generate_random_data(buf);
+	generate_random_data(buf, buflen);
 	eeprom_erase(EEPROM_DATA_U2F_CONST);
 	eeprom_write(EEPROM_DATA_U2F_CONST, buf, U2F_CONST_LENGTH);
+
 #ifndef _PRODUCTION_RELEASE
+	//write constants to debug out
 	u2f_prints("u2f_zero_const: "); dump_hex(buf,U2F_CONST_LENGTH);
-	memmove(output+1+32, buf, 16);
+	if (output_debug != NULL)
+		memmove(output_debug+32, buf, 16);
 
 	u2f_sha256_start(U2F_DEVICE_KEY_SLOT, ATECC_SHA_HMACSTART);
-	u2f_sha256_update("successful write test");
+	u2f_sha256_update("successful write test", 18);
 	u2f_sha256_finish();
-	memmove(output+1+16, res_digest.buf, 16);
+	if (output_debug != NULL)
+		memmove(output_debug+16, res_digest.buf, 16);
 #endif
+	return 1;
 }
+
+#define ASD_ERR_SUCCESS		1
+#define ASD_ERR_SMALL_BUFFER	10
+
+uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	uint8_t err;
+	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
+
+	u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
+	u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
+
+	err = generate_mask(temporary_buffer, M_RKEY, bufsize);
+	if (err!=GM_ERR_SUCCESS) return err;
+	memmove(device_configuration.RMASK,temporary_buffer,sizeof(device_configuration.RMASK));
+
+	write_masks();
+	read_masks();
+	u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
+	return ASD_ERR_SUCCESS;
+}
+
+uint8_t generate_WMASK(uint8_t *temporary_buffer, uint8_t bufsize){
+	uint8_t err;
+	if (bufsize<64) return ASD_ERR_SMALL_BUFFER;
+
+	u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
+	u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
+
+	err = generate_mask(temporary_buffer, M_WKEY, bufsize);
+	if (err != GM_ERR_SUCCESS) return err;
+
+	memmove(write_key,temporary_buffer,sizeof(write_key));
+	memmove(device_configuration.WMASK,temporary_buffer, sizeof(device_configuration.WMASK));
+
+	write_masks();
+	read_masks();
+	u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
+	return ASD_ERR_SUCCESS;
+}
+
+#endif //#ifdef FEAT_FACTORY_RESET
+
+#ifdef ATECC_SETUP_DEVICE
 
 #ifdef ATECC_PASSTHROUGH
 typedef struct atecc_command{
@@ -675,6 +745,32 @@ typedef struct atecc_command{
 	uint8_t buf[64-4];
 } atecc_cmd;
 #endif
+
+#define ASD_ERR_WRITE			4
+#define ASD_ERR_LOCK			2
+#define ASD_ERR_DATALOCK		3
+#define ASD_ERR_OTHER			0
+#define ASD_ERR_INVALID_CMD		0
+#define ASD_ERR_PRIVWRITE		0
+static uint8_t write_and_lock_config(uint16_t crc, uint8_t* buf, uint8_t buf_size){
+	int i;
+	// change watchdog period to 13s
+	WDTCN = 7;
+	// try to write config beforehand
+	i = atecc_setup_config(appdata.tmp);
+	if (i != 0){
+		return ASD_ERR_WRITE;
+	}
+
+	if (atecc_send_recv(ATECC_CMD_LOCK,
+			ATECC_LOCK_CONFIG, crc, NULL, 0,
+			buf, buf_size, NULL))
+	{
+		u2f_prints("ATECC_CMD_LOCK config failed\r\n");
+		return ASD_ERR_LOCK;
+	}
+	return 0;
+}
 
 // buf should be at least 40 bytes
 void atecc_setup_device(struct config_msg * usb_msg_in)
@@ -721,35 +817,22 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 
 		case U2F_CONFIG_IS_BUILD:
 			u2f_prints("U2F_CONFIG_IS_BUILD\r\n");
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			break;
 		case U2F_CONFIG_IS_CONFIGURED:
 			u2f_prints("U2F_CONFIG_IS_CONFIGURED\r\n");
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			break;
 
 		case U2F_CONFIG_LOCK:
+			usb_msg_out.buf[0] = 0xFF;
 			crc = *(uint16_t*)usb_msg_in->buf;
-			usb_msg_out.buf[0] = 1;
 			u2f_printx("got crc: ",1,crc);
 
 			if (!is_config_locked(buf))
 			{
-				// change watchdog period to 13s
-				WDTCN = 7;
-				// try to write config beforehand
-				i = atecc_setup_config(appdata.tmp);
-				if (i != 0){
-					usb_msg_out.buf[0] = 4;
-					break;
-				}
-
-				if (atecc_send_recv(ATECC_CMD_LOCK,
-						ATECC_LOCK_CONFIG, crc, NULL, 0,
-						buf, sizeof(buf), NULL))
-				{
-					u2f_prints("ATECC_CMD_LOCK config failed\r\n");
-					usb_msg_out.buf[0] = 2;
+				usb_msg_out.buf[0] = write_and_lock_config(crc, buf, sizeof(buf));
+				if (usb_msg_out.buf[0] != 0){
 					break;
 				}
 			}
@@ -766,7 +849,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 						buf, sizeof(buf), NULL))
 				{
 					u2f_prints("ATECC_CMD_LOCK data failed\r\n");
-					usb_msg_out.buf[0] = 3;
+					usb_msg_out.buf[0] = ASD_ERR_DATALOCK;
 					break;
 				}
 			}
@@ -774,55 +857,51 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			{
 				u2f_prints("data already locked\r\n");
 			}
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			break;
 
 		case U2F_CONFIG_LOAD_RMASK_KEY:
-			u2f_prints("U2F_CONFIG_LOAD_RMASK_KEY\r\n");
-			u2f_prints("current read key: "); dump_hex(device_configuration.RMASK,36);
-
-			generate_mask(appdata.tmp, 0);
-			memmove(device_configuration.RMASK,appdata.tmp,36);
-
-			write_masks();
-			read_masks();
-			u2f_prints("new set read key: "); dump_hex(device_configuration.RMASK,36);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
 			memmove(usb_msg_out.buf+1,device_configuration.RMASK,36);
+#endif
 			break;
 
 		case U2F_CONFIG_LOAD_WRITE_KEY:
-			u2f_prints("U2F_CONFIG_LOAD_WRITE_KEY\r\n");
-			u2f_prints("current write key: "); dump_hex(device_configuration.WMASK,36);
-
-			generate_mask(appdata.tmp, 1);
-			memmove(write_key,appdata.tmp,36);
-			memmove(device_configuration.WMASK,appdata.tmp,36);
-
-			write_masks();
-			read_masks();
-			u2f_prints("new set write key: "); dump_hex(device_configuration.WMASK,36);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
 			memmove(usb_msg_out.buf + 1 , device_configuration.WMASK, 36);
+#endif
 			break;
 
 		case U2F_CONFIG_GEN_DEVICE_KEY:
 			u2f_prints("U2F_CONFIG_GEN_DEVICE_KEY\r\n");
-			generate_device_key(usb_msg_out.buf, appdata.tmp, sizeof(appdata.tmp));
+			usb_msg_out.buf[0] = generate_device_key(usb_msg_out.buf+1,
+					appdata.tmp, sizeof(appdata.tmp));
 			break;
 
 #ifndef _PRODUCTION_RELEASE
+		case U2F_CONFIG_GET_CONSTANTS:
+			usb_msg_out.buf[0] = ASD_ERR_OTHER;
+			eeprom_read(EEPROM_DATA_WMASK, usb_msg_out.buf+1, 16);
+			eeprom_read(EEPROM_DATA_RMASK, usb_msg_out.buf+1+16, 16);
+			eeprom_read(EEPROM_DATA_U2F_CONST, usb_msg_out.buf+1+16+16, 16);
+
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
+			break;
+
 		case U2F_CONFIG_GET_SLOTS_FINGERPRINTS:
-			usb_msg_out.buf[0] = 0;
+			usb_msg_out.buf[0] = ASD_ERR_OTHER;
 
 			for (i=0; i<16; i++){
 				u2f_sha256_start(i, ATECC_SHA_HMACSTART);
-				u2f_sha256_update("successful write test");
+				u2f_sha256_update("successful write test", 18);
 				u2f_sha256_finish();
 				if (get_app_error() == ERROR_NOTHING)
 						memmove(usb_msg_out.buf+i*3+1, res_digest.buf, 3);
 			}
 
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			set_app_error(ERROR_NOTHING);
 			break;
 #endif
@@ -833,7 +912,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			//reusing trans_key buffer for the attestation key upload
 			memset(trans_key,0,36);
 			memmove(trans_key+4,usb_msg_in->buf,32);
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			compute_key_hash(trans_key,  EEPROM_DATA_WMASK, U2F_ATTESTATION_KEY_SLOT);
 
 			u2f_prints("write key: "); dump_hex(write_key,36);
@@ -844,7 +923,7 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 //				key, and SlotConfig.IsSecret must be set to one, or else this command will return an error. If the slot is
 //				individually locked using SlotLocked, then this command will also return an error.
 				u2f_prints("load attest key failed\r\n");
-				usb_msg_out.buf[0] = 0;
+				usb_msg_out.buf[0] = ASD_ERR_PRIVWRITE;
 			}
 
 			break;
@@ -857,12 +936,12 @@ void atecc_setup_device(struct config_msg * usb_msg_in)
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-0));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-1));
 			eeprom_erase(EEPROM_PAGE_START(EEPROM_LAST_PAGE_NUM-2));
-			usb_msg_out.buf[0] = 1;
+			usb_msg_out.buf[0] = ASD_ERR_SUCCESS;
 			led_blink(1, 100);
 			break;
 		default:
 			u2f_printb("invalid command: ",1,usb_msg_in->cmd);
-			usb_msg_out.buf[0] = 0;
+			usb_msg_out.buf[0] = ASD_ERR_INVALID_CMD;
 	}
 
 	usb_write((uint8_t*)&usb_msg_out, HID_PACKET_SIZE);

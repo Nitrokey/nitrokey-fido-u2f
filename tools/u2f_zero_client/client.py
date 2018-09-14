@@ -172,6 +172,7 @@ class commands:
     U2F_CONFIG_GEN_DEVICE_KEY = 0x8c
     U2F_CONFIG_GET_SLOTS_FINGERPRINTS = 0x8d
     U2F_CONFIG_TEST_CONFIG = 0x8e
+    U2F_CONFIG_GET_CONSTANTS = 0x8f
 
     U2F_VENDOR_FIRST = (0x80 | 0x40)
     U2F_VENDOR_LAST = (0x80 | 0x7f)
@@ -179,9 +180,24 @@ class commands:
     U2F_CUSTOM_RNG  = U2F_VENDOR_FIRST + 0
     U2F_CUSTOM_SEED = U2F_VENDOR_FIRST + 1
     U2F_CUSTOM_WINK = U2F_VENDOR_FIRST + 2
-    
+    U2F_CUSTOM_FACTORY_RESET = U2F_VENDOR_FIRST + 3
+
     U2F_HID_INIT = 0x86
     U2F_HID_PING = 0x81
+
+def safe_ord(d):
+    try:
+        return ord(d)
+    except:
+        return d
+
+def mhex(d):
+    return '{:02X}'.format(d)
+
+def data_to_hex_string(data):
+    hex_chars = map(mhex, map(safe_ord, data))
+    hex_string = " ".join(c for c in hex_chars)
+    return hex_string
 
 
 if len(sys.argv) not in [2,3,4,5,6]:
@@ -197,6 +213,7 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     ping <bytes count>: test ping capabilities of the device')
     print('     bootloader-destroy: permanently disable the bootloader')
     print('     fingerprints: print data slots fingerprints (debug firmware only)')
+    print('     factory-reset: generate new device key')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -320,9 +337,7 @@ def do_configure(h,pemkey):
 
     config = "\x01\x23\x6d\x10\x00\x00\x50\x00\xd7\x2c\xa5\x71\xee\xc0\x85\x00\xc0\x00\x55\x00\x83\x71\x81\x01\x83\x71\xC1\x01\x83\x71\x83\x71\x83\x71\xC1\x71\x01\x01\x83\x71\x83\x71\xC1\x71\x83\x71\x83\x71\x83\x71\x83\x71\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x55\x55\xff\xff\x00\x00\x00\x00\x00\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x3c\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x3C\x00\x13\x00\x33\x00"
 
-
-    h.write([0,commands.U2F_CONFIG_IS_BUILD])
-    data = h.read(64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_IS_BUILD])
     if len(data) >= 2 and data[1] == 1:
         print('Device is configured.')
     else:
@@ -331,40 +346,35 @@ def do_configure(h,pemkey):
 
     time.sleep(0.250)
 
-    h.write([0,commands.U2F_CONFIG_GET_SERIAL_NUM])
-    while True:
-        data = read_n_tries(h,5,64,1000)
-        l = data[1]
-        print( 'read %i bytes' % l)
-        if data[0] == commands.U2F_CONFIG_GET_SERIAL_NUM:
-            break
-    print( data)
+    data = send_receive(h, [0,commands.U2F_CONFIG_GET_SERIAL_NUM])
+    print(data_to_hex_string(data))
+    l = data[1]  # type: int
+    print('read %i bytes' % l)
     config = array.array('B',data[2:2+l]).tostring() + config[l:]
     print( 'conf: ', binascii.hexlify(config))
     time.sleep(0.250)
     assert (l == 15)
 
     crc = get_crc(config)
-    print( 'crc is ', [hex(x) for x in crc])
-    h.write([0,commands.U2F_CONFIG_LOCK] + crc)
-    data = read_n_tries(h,5,64,1000)
+    print('crc is ', [hex(x) for x in crc])
+
+    data = send_receive(h, [0, commands.U2F_CONFIG_LOCK] +crc)
 
     if data[1] == 1:
-        print( 'locked eeprom with crc ',crc)
+        print('locked eeprom with crc ',crc)
     else:
+        print(data[1])
+        print(data_to_hex_string(data))
         die('not locked')
 
     time.sleep(0.250)
 
-
-    h.write([0,commands.U2F_CONFIG_LOAD_WRITE_KEY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_WRITE_KEY])
     if data[1] != 1:
         print('recv wkey: ' + repr(data))
         die('failed loading write key ({})'.format(data[1]))
 
-    h.write([0,commands.U2F_CONFIG_LOAD_READ_KEY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_READ_KEY])
     if data[1] != 1:
         die('failed loading read key')
 
@@ -374,31 +384,26 @@ def do_configure(h,pemkey):
         die('Incorrect key type.  Must be prime256v1 ECC private key in PEM format.')
 
 
-    h.write([0,commands.U2F_CONFIG_LOAD_ATTEST_KEY] + [ord(x) for x in attestkey.to_string()])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_LOAD_ATTEST_KEY] + [ord(x) for x in attestkey.to_string()])
     if len(data)<2 or data[1] != 1:
         print(data[:2])
         die('failed loading attestation key')
 
-
-    h.write([0, commands.U2F_CONFIG_GEN_DEVICE_KEY])
-    data = read_n_tries(h, 5, 64, 1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_GEN_DEVICE_KEY])
     if data[1] != 1:
         die('failed generating device key' + repr(data[:2]))
 
-
-
     data_i = iter(data)
     next_i(data_i, 2)
-    print('generated device key: ' + repr(next_i(data_i, 16)))
-    print('written device key hash: ' + repr(next_i(data_i, 16)))
-    print('generated u2f_zero_const: ' + repr(next_i(data_i, 16)))
-    print('full response: ' + repr(data))
+    print('generated device key: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('written device key hash: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('generated u2f_zero_const: ' + data_to_hex_string(next_i(data_i, 16)))
+    print('full response: ' + data_to_hex_string(data))
 
 
     print( 'Done.  Erasing bootloader code pages on MCU.')
-    h.write([0,commands.U2F_CONFIG_BOOTLOADER_DESTROY])
-    data = read_n_tries(h,5,64,1000)
+    data = send_receive(h, [0,commands.U2F_CONFIG_BOOTLOADER_DESTROY])
+
     if len(data)<2 or data[1] != 1:
         print(data)
         die('failed to remove the bootloader.')
@@ -458,19 +463,41 @@ def do_seed(h):
     h.close()
 
 def do_wipe(h):
-    cmd = cmd_prefix + [ commands.U2F_CUSTOM_WIPE, 0,0]
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
     h.write(cmd)
-    print( 'Press U2F button repeatedly until the LED is no longer red.')
+    # print('Press U2F button repeatedly until the LED is no longer red.')
     res = None
-    while not res:
-        res = h.read(64, 10000)
-    if res[7] != 1:
-        print( 'Wipe failed')
+
+    while not res or res[4] != commands.U2F_CUSTOM_FACTORY_RESET:
+        time.sleep(.3)
+        res = h.read(64, 20*1000)
+
+    print(data_to_hex_string(res))
+    print()
+    res = res[4:]
+    print(data_to_hex_string(res[:6]))
+
+    data = iter(res[6:])
+    _data = {}
+    for i in range(3):
+        l = next_i(data, 8)
+        _data[i] = l
+        print(data_to_hex_string(l))
+
+    for i in range(2):
+        l = next_i(data, 8)
+        if not _data[i] == l:
+            print(data_to_hex_string(l))
+
+    for i in range(2):
+        l = next_i(data, 4)
+        if l != [0xFF]*4:
+            print(data_to_hex_string(l))
+
+    if res[3] == 1 and res[4] == 1 and res[5] == 1:
+        print('Wipe succeeded')
     else:
-        print( 'Wipe succeeded')
-
-
-    h.close()
+        print('Wipe failed')
 
 def hexcode2bytes(color):
     h = [ord(x) for x in color.replace('#','').decode('hex')]
@@ -583,17 +610,55 @@ def do_config_test(h):
     print (len(data), repr(data))
 
 
+def send_receive(h, to_send, delay=1000):
+    """
+    Resend command until received proper command id.
+    Use only for read-only functions
+    :param h: device handle, write() function
+    :param to_send: data to send, prefixed with '0' and command id byte
+    :param delay: delay for hidapi to wait for device's response
+    :return: received data from h.read()
+    """
+    cmd = to_send[1]
+
+    for j in range(2):
+        print('s', end='', file=sys.stderr)
+        h.write(to_send)
+        for i in range(10):
+            time.sleep(0.3)
+            print('r', end='', file=sys.stderr)
+            data = read_n_tries(h, 5, 64, delay)
+            if data and data[0] == cmd:
+                print('', file=sys.stderr)
+                return data
+    print('x', end='', file=sys.stderr)
+    return None
+
+
 def do_fingerprints(h):
     print('Get data slots fingerprints')
-    h.write([0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
-    data = read_n_tries(h, 5, 64, 1000)
-    print (len(data), repr(data))
+    data = send_receive(h, [0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
+    print (len(data), data_to_hex_string(data))
+    print()
     if len(data) < 2:
         return
     data_i = iter(data)
-    print('status', repr(next_i(data_i, 2)))
+    status = next_i(data_i, 2)
+    print('status', data_to_hex_string(status))
+    if status[1] != 1:
+        print('Invalid status')
+        return
     for i in range(16):
-        print('{}: {}'.format(i, repr(next_i(data_i, 3))))
+        print('{:02}: {}'.format(i, data_to_hex_string(next_i(data_i, 3))))
+    print()
+
+    data = send_receive(h, [0, commands.U2F_CONFIG_GET_CONSTANTS])
+    if not data:
+        return
+    data_i = iter(data)
+    print('status', data_to_hex_string(next_i(data_i, 2)))
+    for i in range(3):
+        print('{}: {}'.format(i, data_to_hex_string(next_i(data_i, 16))))
     print()
 
 
@@ -622,7 +687,7 @@ if __name__ == '__main__':
     elif action == 'seed':
         h = open_u2f(SN)
         do_seed(h)
-    elif action == 'wipe':
+    elif action in ['factory-reset', 'wipe']:
         h = open_u2f(SN)
         do_wipe(h)
     elif action == 'passt':

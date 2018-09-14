@@ -140,7 +140,9 @@ int16_t main(void) {
 
 		if (!USBD_EpIsBusy(EP1OUT) && !USBD_EpIsBusy(EP1IN) && state != APP_HID_MSG)
 		{
-			USBD_Read(EP1OUT, hidmsgbuf, sizeof(hidmsgbuf), true);
+			if (USBD_Read(EP1OUT, hidmsgbuf, sizeof(hidmsgbuf), true) != USB_STATUS_OK){
+				set_app_error(ERROR_USB_WRITE);
+			}
 		}
 
 		u2f_hid_check_timeouts();
@@ -183,7 +185,7 @@ int16_t main(void) {
 			clear = 0;
 			for (i=0; i<2048; i++)                    // wipe ram
 			{
-				if (clear == &clear || clear == &i)
+				if (clear == &i)
 					continue;
 				*(clear++) = 0;
 			}
