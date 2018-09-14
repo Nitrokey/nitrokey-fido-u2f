@@ -217,6 +217,7 @@ int8_t atecc_send_recv(uint8_t cmd, uint8_t p1, uint16_t p2,
 int8_t atecc_write_eeprom(uint8_t base, uint8_t offset, uint8_t* srcbuf, uint8_t len);
 
 int8_t read_masks();
+int8_t write_masks();
 
 uint8_t generate_device_key(uint8_t *output_debug, uint8_t *buf, uint8_t buflen);
 uint8_t generate_RMASK(uint8_t *temporary_buffer, uint8_t bufsize);

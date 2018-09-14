@@ -190,8 +190,6 @@ uint8_t get_readable_config(uint8_t * out_slotconfig, uint8_t slotconfig_len,
 	struct atecc_slot_config slot_arr[16];
 	struct atecc_key_config key_arr[16];
 
-	uint8_t result;
-
 	if (out_slotconfig != NULL && slotconfig_len != sizeof(slot_arr))
 		return 3;
 
