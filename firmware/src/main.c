@@ -140,7 +140,12 @@ int16_t main(void) {
 
 		if (!USBD_EpIsBusy(EP1OUT) && !USBD_EpIsBusy(EP1IN) && state != APP_HID_MSG)
 		{
-			USBD_Read(EP1OUT, hidmsgbuf, sizeof(hidmsgbuf), true);
+			if (USBD_Read(EP1OUT, hidmsgbuf, sizeof(hidmsgbuf), true) != USB_STATUS_OK){
+				set_app_error(ERROR_USB_WRITE);
+			}
+			//clear USB out
+			memset(appdata.tmp, 0, 64);
+			usb_write((uint8_t*)appdata.tmp, 64);
 		}
 
 		u2f_hid_check_timeouts();
