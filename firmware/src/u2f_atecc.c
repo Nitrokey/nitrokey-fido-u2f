@@ -66,7 +66,7 @@ void u2f_response_start()
 static uint32_t last_button_cleared_time = 0;
 
 void clear_button_press(){
-	if (get_ms() - last_button_cleared_time < 10*1000)
+	if (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD)
 		return;
 	last_button_cleared_time = get_ms();
 
