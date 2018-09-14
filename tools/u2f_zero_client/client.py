@@ -470,7 +470,7 @@ def do_wipe(h):
 
     while not res or res[4] != commands.U2F_CUSTOM_FACTORY_RESET:
         time.sleep(.3)
-        res = h.read(64, 20000)
+        res = h.read(64, 20*1000)
 
     print(data_to_hex_string(res))
     print()
