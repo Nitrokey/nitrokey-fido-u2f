@@ -35,6 +35,7 @@
 #include "bsp.h"
 #include "gpio.h"
 #include "atecc508a.h"
+#include "eeprom.h"
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
@@ -46,16 +47,35 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 	{
 #ifdef FEAT_FACTORY_RESET
 		case U2F_CUSTOM_FACTORY_RESET:
-			memset(msg->pkt.init.payload, 0, sizeof(msg->pkt.init.payload));
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
 
+			// clear device key explicitly
+			memset(device_configuration.RMASK, 0, sizeof(device_configuration.RMASK));
+			memset(device_configuration.WMASK, 0, sizeof(device_configuration.WMASK));
+			eeprom_erase(EEPROM_DATA_WMASK);
+			eeprom_erase(EEPROM_DATA_RMASK);
+			eeprom_erase(EEPROM_DATA_U2F_CONST);
+
+#ifndef _PRODUCTION_RELEASE
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8+8+8, 4);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8+8+4, 4);
+#endif
 			out[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
 			out[1] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
 			out[2] = generate_device_key(NULL, appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
+			memmove(out+3, device_configuration.WMASK, 8);
+			memmove(out+3+8, device_configuration.RMASK, 8);
+			eeprom_read(EEPROM_DATA_U2F_CONST, out+3+8+8, 8);
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8, 8);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8, 8);
+#endif //#ifndef _PRODUCTION_RELEASE
 
-			U2FHID_SET_LEN(msg, 32);
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
 			usb_write((uint8_t*)msg, 64);
 			break;
 #endif // #ifdef FEAT_FACTORY_RESET
+
 #ifdef U2F_SUPPORT_RNG_CUSTOM
 		case U2F_CUSTOM_GET_RNG:
 			if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
