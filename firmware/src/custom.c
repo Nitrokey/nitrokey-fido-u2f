@@ -50,7 +50,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 		case U2F_CUSTOM_FACTORY_RESET:
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
 
-			if(u2f_get_user_feedback()){
+			if(u2f_get_user_feedback_extended_wipe()){
 				U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
 				usb_write((uint8_t*)msg, 64);
 				break;

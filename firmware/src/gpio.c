@@ -32,18 +32,9 @@
 
 #include "bsp.h"
 #include "app.h"
-
+#include "gpio.h"
 
 #define ms_since(ms,num) (((uint16_t)get_ms() - (ms)) >= num ? ((ms=(uint16_t)get_ms())):0)
-
-typedef enum {
-	BST_UNPRESSED,
-	BST_PRESSED_RECENTLY,
-	BST_PRESSED_REGISTERED,
-	BST_PRESSED_CONSUMED,
-
-	BST_MAX_NUM
-} BUTTON_STATE_T;
 
 data  uint32_t        button_press_t;                   // Timer for TaskButton() timings
 data  BUTTON_STATE_T  button_state = BST_UNPRESSED;    // Holds the actual registered logical state of the button
@@ -66,6 +57,11 @@ void button_manager (void) {                          // Requires at least a 750
 		    }break;
 		    case BST_PRESSED_CONSUMED:
 		    	break;
+		    case BST_PRESSED_REGISTERED:
+		    	if (get_ms() - button_press_t >= BUTTON_MIN_PRESS_T_MS_EXT) {
+					button_state = BST_PRESSED_REGISTERED_EXT;
+				}
+		    	break;
 		    default:
 		    	break;
 		}
@@ -78,8 +74,17 @@ uint8_t button_get_press (void) {
 	return ((button_state == BST_PRESSED_REGISTERED)? 1 : 0);
 }
 
+BUTTON_STATE_T button_get_press_state (void) {
+	return button_state;
+}
+
+uint8_t button_get_press_extended (void) {
+	return ((button_state == BST_PRESSED_REGISTERED_EXT)? 1 : 0);
+}
+
 uint8_t button_press_in_progress(void){
-	return ((button_state == BST_PRESSED_RECENTLY)? 1 : 0);
+	return ((button_state == BST_PRESSED_RECENTLY ||
+			button_state == BST_PRESSED_REGISTERED)? 1 : 0);
 }
 
 void button_press_set_consumed(void){

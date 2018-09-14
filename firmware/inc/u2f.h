@@ -146,6 +146,7 @@ extern void u2f_response_start();
 // This should block as long as it needs to get feedback
 // before failing.
 extern int8_t u2f_get_user_feedback();
+extern int8_t u2f_get_user_feedback_extended_wipe();
 
 
 void clear_button_press();

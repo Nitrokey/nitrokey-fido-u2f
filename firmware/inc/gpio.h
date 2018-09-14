@@ -30,6 +30,8 @@
 
 void button_manager (void);
 uint8_t button_get_press (void);
+uint8_t button_get_press_extended (void);
+
 uint8_t button_press_in_progress(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
@@ -38,5 +40,17 @@ void led_on (void);
 void led_off (void);
 void led_blink (uint8_t blink_num, uint16_t period_t);
 void led_blink_manager (void);
+
+typedef enum {
+	BST_UNPRESSED,
+	BST_PRESSED_RECENTLY,
+	BST_PRESSED_REGISTERED,		// normal press period
+	BST_PRESSED_REGISTERED_EXT, // extended press period
+	BST_PRESSED_CONSUMED,
+
+	BST_MAX_NUM
+} BUTTON_STATE_T;
+
+BUTTON_STATE_T button_get_press_state (void);
 
 #endif /* GPIO_H_ */
