@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2016, Conor Patrick
  * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
@@ -25,36 +24,11 @@
 
  */
 
-#ifndef EEPROM_H_
-#define EEPROM_H_
+#ifndef INC_USB_SERIAL_H_
+#define INC_USB_SERIAL_H_
 
-#include "app.h"
-
-void eeprom_init();
-
-void eeprom_read(uint16_t addr, uint8_t * buf, uint8_t len);
-void eeprom_xor(uint16_t addr, uint8_t * out_buf, uint8_t len);
-
-void _eeprom_write(uint16_t addr, uint8_t * buf, uint8_t len, uint8_t flags);
+void get_serial_num();
+void update_USB_serial();
 
 
-#define eeprom_write(a,b,l) 		_eeprom_write(a,b,l,0x1)
-#define eeprom_erase(a) 			_eeprom_write(a,appdata.tmp,1,0x3)
-
-#define EEPROM_PAGE_START(p)		(0x200*(p))
-#define EEPROM_KB_START(p)			(EEPROM_PAGE_START(2*p))
-#define EEPROM_PAGE_COUNT			(79)
-#define EEPROM_LAST_PAGE_NUM		(EEPROM_PAGE_COUNT-1)
-// 0x8000 -> 20kB
-#define EEPROM_DATA_START 			(EEPROM_KB_START(20))
-// pages are 512-bytes each, required to be written separately
-// FIXME allocate all constants on one page (36 + 36 + 16)
-#define EEPROM_DATA_MASKS 			EEPROM_DATA_START
-#define EEPROM_DATA_RMASK 			(EEPROM_DATA_MASKS + 0)
-#define EEPROM_DATA_WMASK 			(EEPROM_DATA_RMASK + 512)
-#define EEPROM_DATA_U2F_CONST		(EEPROM_DATA_WMASK + 512)
-#define EEPROM_DATA_SERIAL			(EEPROM_DATA_U2F_CONST + 512)
-
-#define U2F_CONST_LENGTH			(32)
-
-#endif /* EEPROM_H_ */
+#endif /* INC_USB_SERIAL_H_ */

@@ -151,7 +151,7 @@ UTF16LE_PACKED_STATIC_CONST_STRING_DESC( int0Desc[], INT0_STRING, 18 );
 //-----------------------------------------------------------------------------
 SI_SEGMENT_POINTER(myUsbStringTable_USEnglish[],
 		static const USB_StringDescriptor_TypeDef,
-		const SI_SEG_CODE) =
+		const SI_SEG_XDATA) =
 {
 	langDesc,
 	mfrDesc,
@@ -164,7 +164,7 @@ SI_SEGMENT_POINTER(myUsbStringTable_USEnglish[],
 //-----------------------------------------------------------------------------
 SI_SEGMENT_VARIABLE(initstruct,
 		const USBD_Init_TypeDef,
-		SI_SEG_CODE) =
+		SI_SEG_XDATA) =
 {
 	deviceDesc,                                         // deviceDescriptor
 	configDesc,// configDescriptor

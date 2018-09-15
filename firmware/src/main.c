@@ -31,6 +31,7 @@
  *
  */
 #include <SI_EFM8UB3_Register_Enums.h>
+#include <usb_serial.h>
 
 #include "InitDevice.h"
 #include "app.h"
@@ -88,10 +89,13 @@ void set_app_u2f_hid_msg(struct u2f_hid_msg * msg )
 	hid_msg = msg;
 }
 
+
 int16_t main(void) {
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
 
+	// initialize USB
+	update_USB_serial();
 	enter_DefaultMode_from_RESET();
 
 	// ~800 ms interval watchdog
@@ -111,6 +115,7 @@ int16_t main(void) {
 	IE_EA = 1;
 	watchdog();
 
+	get_serial_num();
 
 	if (RSTSRC & RSTSRC_WDTRSF__SET)
 	{
