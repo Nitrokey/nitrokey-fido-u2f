@@ -157,7 +157,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 	}
 
 	if(req->key_handle_length != U2F_KEY_HANDLE_SIZE){
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_WRONG_LENGTH;
 	}
 
