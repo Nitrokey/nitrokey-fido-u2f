@@ -59,7 +59,6 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			eeprom_erase(EEPROM_DATA_CONFIG);
 			eeprom_write(EEPROM_DATA_CONFIG, msg->pkt.init.payload, sizeof(Configuration));
 			configuration_read();
-			//FIXME reset?
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
 #ifndef _PRODUCTION_RELEASE
 			eeprom_read(EEPROM_DATA_CONFIG, out+2, sizeof(Configuration));
@@ -67,6 +66,8 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			out[0] = 1;
 			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
 			usb_write((uint8_t*)msg, 64);
+			u2f_delay(100);
+			RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
 		break;
 
 #ifdef FEAT_FACTORY_RESET

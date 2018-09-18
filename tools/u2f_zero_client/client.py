@@ -424,7 +424,7 @@ def bootloader_destroy(h):
 
 
 def do_update_config(h, serial_enable=0):
-    cmd = [0,0xff,0xff,0xff,0xff, commands.U2F_CUSTOM_UPDATE_CONFIG, 0, 0]
+    cmd = [0, 0xff ,0xff, 0xff, 0xff, commands.U2F_CUSTOM_UPDATE_CONFIG, 0, 0]
     print(data_to_hex_string(cmd + [serial_enable]))
     h.write(cmd + [serial_enable])
     resp = None
