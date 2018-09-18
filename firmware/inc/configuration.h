@@ -36,8 +36,8 @@ Configuration;
 
 extern Configuration configuration;
 
-void write_config();
-Configuration * read_config();
+void configuration_write();
+Configuration * configuration_read();
 
 typedef enum {
 	CONFIG_FALSE 	= 0x00,

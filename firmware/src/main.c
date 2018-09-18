@@ -95,7 +95,7 @@ int16_t main(void) {
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
 
-	read_config();
+	configuration_read();
 	// initialize USB
 	update_USB_serial();
 	enter_DefaultMode_from_RESET();

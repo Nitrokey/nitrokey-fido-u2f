@@ -29,12 +29,12 @@
 
 Configuration configuration;
 
-void write_config(){
+void configuration_write(){
 	eeprom_erase(EEPROM_DATA_CONFIG);
-	eeprom_write(EEPROM_DATA_CONFIG, &configuration, sizeof(configuration));
+	eeprom_write(EEPROM_DATA_CONFIG, (uint8_t*)&configuration, sizeof(configuration));
 }
 
-Configuration * read_config(){
-	eeprom_read(EEPROM_DATA_CONFIG, &configuration, sizeof(configuration));
+Configuration * configuration_read(){
+	eeprom_read(EEPROM_DATA_CONFIG, (uint8_t*)&configuration, sizeof(configuration));
 	return &configuration;
 }
