@@ -38,6 +38,7 @@ uint8_t button_press_is_consumed(void);
 
 void led_on (void);
 void led_off (void);
+bool led_is_blinking(void);
 void led_blink (uint8_t blink_num, uint16_t period_t);
 void led_blink_manager (void);
 

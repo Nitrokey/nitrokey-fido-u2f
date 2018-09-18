@@ -89,7 +89,7 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 	if (button_press_is_consumed())
 		return 1;
 
-	if (blink == true)
+	if (blink == true && led_is_blinking() == false)
 		led_blink(10, 375);
 	watchdog();
 

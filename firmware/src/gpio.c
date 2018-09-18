@@ -106,6 +106,10 @@ void led_off (void) {
 	LED_OFF();                                        // LED physical state -> OFF
 }
 
+bool led_is_blinking(void){
+	return led_blink_num != 0;
+}
+
 void led_blink (uint8_t blink_num, uint16_t period_t) {
 	led_blink_num     	= blink_num;
 	led_blink_period_t 	= period_t;
