@@ -28,6 +28,8 @@
 #ifndef GPIO_H_
 #define GPIO_H_
 
+#define U2F_MS_CLEAR_BUTTON_PERIOD			(20*1000)
+
 void button_manager (void);
 uint8_t button_get_press (void);
 uint8_t button_get_press_extended (void);
@@ -35,6 +37,7 @@ uint8_t button_get_press_extended (void);
 uint8_t button_press_in_progress(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
+void clear_button_press();
 
 void led_on (void);
 void led_off (void);
@@ -42,12 +45,15 @@ bool led_is_blinking(void);
 void led_blink (uint8_t blink_num, uint16_t period_t);
 void led_blink_manager (void);
 
+
 typedef enum {
-	BST_UNPRESSED,
-	BST_PRESSED_RECENTLY,
-	BST_PRESSED_REGISTERED,		// normal press period
-	BST_PRESSED_REGISTERED_EXT, // extended press period
-	BST_PRESSED_CONSUMED,
+	BST_INITIALIZING,			// wait for the charge to settle down
+	BST_INITIALIZING_READY_TO_CLEAR,	// ready for clearing
+	BST_UNPRESSED,				// ready to use
+	BST_PRESSED_RECENTLY,		// touch registration is started
+	BST_PRESSED_REGISTERED,		// touch registered, normal press period
+	BST_PRESSED_REGISTERED_EXT, // touch registered, extended press period
+	BST_PRESSED_CONSUMED,		// touch registered and consumed, but button still not released
 
 	BST_MAX_NUM
 } BUTTON_STATE_T;

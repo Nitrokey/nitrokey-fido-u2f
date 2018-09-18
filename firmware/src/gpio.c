@@ -37,13 +37,30 @@
 #define ms_since(ms,num) (((uint16_t)get_ms() - (ms)) >= num ? ((ms=(uint16_t)get_ms())):0)
 
 data  uint32_t        button_press_t;                   // Timer for TaskButton() timings
-data  BUTTON_STATE_T  button_state = BST_UNPRESSED;    // Holds the actual registered logical state of the button
+data  BUTTON_STATE_T  button_state = BST_INITIALIZING;    // Holds the actual registered logical state of the button
 
 static data uint32_t  led_blink_tim;                    // Timer for TaskLedBlink() timings
 static data uint16_t  led_blink_period_t;                // Period time register
 static data uint8_t   led_blink_num;                    // Blink number counter, also an indicator if blinking is on
 
+static data uint32_t  button_manager_start_t = 0;
+
 void button_manager (void) {                          // Requires at least a 750ms long button press to register a valid user button press
+
+	if (button_state == BST_INITIALIZING){
+		if (button_manager_start_t == 0){
+			button_manager_start_t = get_ms();
+			return;
+		}
+		if (get_ms() - button_manager_start_t <= 3000){
+			return;
+		}
+		button_state = BST_INITIALIZING_READY_TO_CLEAR;
+	}
+	if (button_state == BST_INITIALIZING_READY_TO_CLEAR){
+		return;
+	}
+
 	if (IS_BUTTON_PRESSED()) {                        // Button's physical state: pressed
 		switch (button_state) {                        // Handle press phase
 		    case BST_UNPRESSED: {                     // It happened at this moment
@@ -136,4 +153,37 @@ void led_blink_manager (void) {
 			}
 		}
 	}
+}
+
+static void set_button_cleared(){
+	button_state = BST_UNPRESSED;
+}
+
+
+static uint32_t last_button_cleared_time = 0;
+
+void clear_button_press(){
+	if (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD)
+		return;
+	if (button_get_press_state() == BST_INITIALIZING){
+		return;
+	}
+	last_button_cleared_time = get_ms();
+
+#ifndef _PRODUCTION_RELEASE
+	led_on();
+#endif
+	BUTTON_RESET_ON();
+	do {
+		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
+	} while (IS_BUTTON_PRESSED()); // Wait to release button
+	BUTTON_RESET_OFF();
+#ifndef _PRODUCTION_RELEASE
+	led_off();
+#endif
+
+	if (button_get_press_state() == BST_INITIALIZING_READY_TO_CLEAR){
+		set_button_cleared();
+	}
+
 }

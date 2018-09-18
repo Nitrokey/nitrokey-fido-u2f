@@ -63,23 +63,6 @@ void u2f_response_start()
 	watchdog();
 }
 
-static uint32_t last_button_cleared_time = 0;
-
-void clear_button_press(){
-	if (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD)
-		return;
-	last_button_cleared_time = get_ms();
-
-#ifndef _PRODUCTION_RELEASE
-	led_on();
-#endif
-	BUTTON_RESET_ON();
-	do {
-		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
-	} while (IS_BUTTON_PRESSED()); // Wait to release button
-	BUTTON_RESET_OFF();
-	led_off();
-}
 
 static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
