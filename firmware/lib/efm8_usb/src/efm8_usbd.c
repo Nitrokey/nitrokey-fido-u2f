@@ -174,6 +174,8 @@ USBD_State_TypeDef USBD_GetUsbState(void)
   return myUsbDevice.state;
 }
 
+extern uint8_t dynamic_serial[2*17];
+
 int8_t USBD_Init(SI_VARIABLE_SEGMENT_POINTER(p, const USBD_Init_TypeDef, SI_SEG_GENERIC))
 {
   uint8_t i;

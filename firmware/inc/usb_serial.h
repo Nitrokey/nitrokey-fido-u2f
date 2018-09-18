@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2016, Conor Patrick
  * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
@@ -25,21 +24,11 @@
 
  */
 
-#ifndef CUSTOM_H_
-#define CUSTOM_H_
+#ifndef INC_USB_SERIAL_H_
+#define INC_USB_SERIAL_H_
 
-#include "app.h"
-#include "u2f_hid.h"
-
-#define U2F_CUSTOM_GET_RNG		(U2FHID_VENDOR_FIRST+0)
-#define U2F_CUSTOM_SEED_RNG		(U2FHID_VENDOR_FIRST+1)
-#define U2F_CUSTOM_WINK			(U2FHID_VENDOR_FIRST+2)
-#define U2F_CUSTOM_FACTORY_RESET		(U2FHID_VENDOR_FIRST+3)
-#define U2F_CUSTOM_UPDATE_CONFIG		(U2FHID_VENDOR_FIRST+4)
+void get_serial_num();
+void update_USB_serial();
 
 
-
-uint8_t custom_command(struct u2f_hid_msg * msg);
-
-
-#endif
+#endif /* INC_USB_SERIAL_H_ */
