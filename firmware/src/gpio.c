@@ -165,7 +165,10 @@ static uint32_t last_button_cleared_time = 0;
 void clear_button_press(){
 	if (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD)
 		return;
-	if (button_get_press_state() == BST_INITIALIZING){
+	if (button_get_press_state() == BST_INITIALIZING
+			|| button_get_press_state() == BST_PRESSED_RECENTLY
+			|| button_get_press_state() == BST_PRESSED_CONSUMED
+			){
 		return;
 	}
 	last_button_cleared_time = get_ms();
