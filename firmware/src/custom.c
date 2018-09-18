@@ -86,6 +86,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			eeprom_erase(EEPROM_DATA_WMASK);
 			eeprom_erase(EEPROM_DATA_RMASK);
 			eeprom_erase(EEPROM_DATA_U2F_CONST);
+			eeprom_erase(EEPROM_DATA_CONFIG);
 
 #ifndef _PRODUCTION_RELEASE
 			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8+8+8, 4);
