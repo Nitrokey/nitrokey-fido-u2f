@@ -28,6 +28,7 @@
  */
 
 
+#include "configuration.h"
 #include "descriptors.h"
 #include <stdint.h>
 #include "eeprom.h"
@@ -80,6 +81,9 @@ static void convert_bin_to_hex(uint8_t *src, uint8_t src_len, uint8_t *dest, uin
  * Update USB serial of the device, with a value read from EEPROM.
  */
 void update_USB_serial(){
+	if(configuration.show_serial_on_USB != CONFIG_TRUE)
+		return;
+
 	memset(serial_descriptor.serial_ascii, 0, sizeof(serial_descriptor.serial_ascii));
 	// load target USB serial number
 	eeprom_read(EEPROM_DATA_SERIAL, serial_descriptor.serial_ascii, NK_SERIAL_ASCII_LEN);
@@ -104,6 +108,9 @@ void get_serial_num(){
 	uint8_t serial_ascii[NK_SERIAL_ASCII_LEN];
 	struct atecc_response res;
 	uint8_t i;
+
+	if(configuration.show_serial_on_USB != CONFIG_TRUE)
+			return;
 
 	eeprom_read(EEPROM_DATA_SERIAL, serial_ascii, NK_SERIAL_ASCII_LEN);
 	for (i=0; i<NK_SERIAL_ASCII_LEN; i++){

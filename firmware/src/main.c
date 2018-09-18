@@ -30,6 +30,7 @@
  * 		it will pass it up to the U2F HID layer, implemented in u2f_hid.c.
  *
  */
+#include "configuration.h"
 #include <SI_EFM8UB3_Register_Enums.h>
 #include <usb_serial.h>
 
@@ -94,6 +95,7 @@ int16_t main(void) {
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
 
+	read_config();
 	// initialize USB
 	update_USB_serial();
 	enter_DefaultMode_from_RESET();
