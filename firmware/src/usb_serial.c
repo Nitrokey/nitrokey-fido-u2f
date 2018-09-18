@@ -80,13 +80,9 @@ static void convert_bin_to_hex(uint8_t *src, uint8_t src_len, uint8_t *dest, uin
  * Update USB serial of the device, with a value read from EEPROM.
  */
 void update_USB_serial(){
-	uint8_t i;
-	uint8_t buf[NK_SERIAL_LEN];
-
 	memset(serial_descriptor.serial_ascii, 0, sizeof(serial_descriptor.serial_ascii));
 	// load target USB serial number
-	eeprom_read(EEPROM_DATA_SERIAL, buf, NK_SERIAL_LEN);
-	convert_bin_to_hex(buf, sizeof(buf), serial_descriptor.serial_ascii, sizeof(serial_descriptor.serial_ascii));
+	eeprom_read(EEPROM_DATA_SERIAL, serial_descriptor.serial_ascii, NK_SERIAL_ASCII_LEN);
 
 	serial_descriptor.header[0] = USB_STRING_DESCRIPTOR_UTF16LE_PACKED;
 	serial_descriptor.header[1] = sizeof(serial_descriptor.serial_ascii)*2;
@@ -104,21 +100,24 @@ void update_USB_serial(){
  * See 2.2 EEPROM Configuration Zone, ATECC508A Datasheet Complete DS20005927A-page 13
  */
 void get_serial_num(){
-	uint8_t buf[40];
+	uint8_t atecc_buf[40];
+	uint8_t serial_ascii[40];
 	struct atecc_response res;
 	uint8_t i;
 
-	eeprom_read(EEPROM_DATA_SERIAL, buf, NK_SERIAL_LEN);
-	for (i=0; i<NK_SERIAL_LEN; i++){
-		if (buf[i] != 0xFF) return;				//serial number set already, abort
+	eeprom_read(EEPROM_DATA_SERIAL, serial_ascii, NK_SERIAL_ASCII_LEN);
+	for (i=0; i<NK_SERIAL_ASCII_LEN; i++){
+		if (serial_ascii[i] != 0xFF) return;				//serial number set already, abort
 	}
 
 	// serial number is not set in EEPROM, reading from ATECC
 	atecc_send_recv(ATECC_CMD_READ,
 		ATECC_RW_CONFIG | ATECC_RW_EXT, 0, NULL, 0,
-		buf, sizeof(buf), &res);
+		atecc_buf, sizeof(atecc_buf), &res);
 
+	memset(serial_ascii, 0, sizeof(serial_ascii));
+	convert_bin_to_hex(res.buf, NK_SERIAL_LEN, serial_ascii, sizeof(serial_ascii));
 
 	eeprom_erase(EEPROM_DATA_SERIAL);
-	eeprom_write(EEPROM_DATA_SERIAL, res.buf, res.len);
+	eeprom_write(EEPROM_DATA_SERIAL, serial_ascii, NK_SERIAL_ASCII_LEN);
 }
