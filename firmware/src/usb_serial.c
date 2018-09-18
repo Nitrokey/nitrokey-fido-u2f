@@ -100,8 +100,8 @@ void update_USB_serial(){
  * See 2.2 EEPROM Configuration Zone, ATECC508A Datasheet Complete DS20005927A-page 13
  */
 void get_serial_num(){
-	uint8_t atecc_buf[40];
-	uint8_t serial_ascii[40];
+	uint8_t atecc_buf[32+8];
+	uint8_t serial_ascii[NK_SERIAL_ASCII_LEN];
 	struct atecc_response res;
 	uint8_t i;
 
