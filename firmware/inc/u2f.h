@@ -84,7 +84,7 @@
 #define U2F_SW_CUSTOM_GENKEY          		0x921d
 
 // Delay in milliseconds to wait for user input
-#define U2F_MS_USER_INPUT_WAIT				3000
+#define U2F_MS_USER_INPUT_WAIT				100
 #define U2F_MS_CLEAR_BUTTON_PERIOD			(20*1000)
 
 
