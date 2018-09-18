@@ -425,10 +425,16 @@ def bootloader_destroy(h):
 
 def do_update_config(h, serial_enable=0):
     cmd = [0, 0xff ,0xff, 0xff, 0xff, commands.U2F_CUSTOM_UPDATE_CONFIG, 0, 0]
-    print(data_to_hex_string(cmd + [serial_enable]))
+    # print(data_to_hex_string(cmd + [serial_enable]))
+    print("Start pressing device's touch button within the next 3 seconds, and do not release it for the next 12 seconds or until operation completes. Device will not blink.", file=sys.stderr)
+    print("Press ENTER to continue", file=sys.stderr, end='')
+    raw_input()
+    time.sleep(0.2)
     h.write(cmd + [serial_enable])
     resp = None
-    for i in range(12):
+    op_result = None
+    for i in range(15):
+        print('.', file=sys.stderr, end='')
         resp = h.read(64, 1000)
         if not resp or len(resp) < 8:
             time.sleep(0.2)
@@ -438,7 +444,12 @@ def do_update_config(h, serial_enable=0):
         if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [0, 1]:
             break
         time.sleep(0.2)
-    print(data_to_hex_string(resp))
+    # print(data_to_hex_string(resp))
+    print()
+    if not op_result or op_result == 0:
+        print("Failed to change the configuration. Either touch button was not pressed in the set time, or communication error occurred")
+        return
+    print("Device's configuration updated")
 
 
 def do_rng(h):
