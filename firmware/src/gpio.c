@@ -52,7 +52,7 @@ void button_manager (void) {                          // Requires at least a 750
 			button_manager_start_t = get_ms();
 			return;
 		}
-		if (get_ms() - button_manager_start_t <= 3000){
+		if (get_ms() - button_manager_start_t <= U2F_MS_INIT_BUTTON_PERIOD){
 			return;
 		}
 		button_state = BST_INITIALIZING_READY_TO_CLEAR;
@@ -141,7 +141,7 @@ void led_blink_manager (void) {
 				LED_OFF();                                 // LED physical state -> OFF
 				if (led_blink_num) {                         // It isnt the last blink round: initialize OFF state:
 					led_blink_tim   = get_ms();		       // Init OFF timer
-					if (led_blink_num != 255) {              // Not endless blinking:
+					if (led_blink_num != LED_BLINK_NUM_INF) {              // Not endless blinking:
 						led_blink_num--;                     // Update the remaining blink num
 					}
 				}
