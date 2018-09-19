@@ -163,12 +163,14 @@ static void set_button_cleared(){
 static uint32_t last_button_cleared_time = 0;
 
 void clear_button_press(){
+	// do not clear if enough time has not passed, unless button is ready to be cleared
 	if (button_get_press_state() != BST_INITIALIZING_READY_TO_CLEAR
 			&& (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD) )
 		return;
-	if (button_get_press_state() == BST_INITIALIZING
-			|| button_get_press_state() == BST_PRESSED_RECENTLY
-			|| button_get_press_state() == BST_PRESSED_CONSUMED
+	// do not clear, when:
+	if (button_get_press_state() == BST_INITIALIZING			// button is not ready for clear yet
+			|| button_get_press_state() == BST_PRESSED_RECENTLY	// button is pressed by the user
+			|| button_get_press_state() == BST_PRESSED_CONSUMED	// button is pressed by the user
 			){
 		return;
 	}
