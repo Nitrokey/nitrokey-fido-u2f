@@ -84,8 +84,7 @@
 #define U2F_SW_CUSTOM_GENKEY          		0x921d
 
 // Delay in milliseconds to wait for user input
-#define U2F_MS_USER_INPUT_WAIT				3000
-#define U2F_MS_CLEAR_BUTTON_PERIOD			(10*1000)
+#define U2F_MS_USER_INPUT_WAIT				100
 
 
 struct u2f_request_apdu
@@ -148,8 +147,6 @@ extern void u2f_response_start();
 extern int8_t u2f_get_user_feedback();
 extern int8_t u2f_get_user_feedback_extended_wipe();
 
-
-void clear_button_press();
 
 // u2f_sha256_start callback for u2f to start a sha256 hash
 extern void u2f_sha256_start_default();

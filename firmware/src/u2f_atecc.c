@@ -63,35 +63,17 @@ void u2f_response_start()
 	watchdog();
 }
 
-static uint32_t last_button_cleared_time = 0;
-
-void clear_button_press(){
-	if (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD)
-		return;
-	last_button_cleared_time = get_ms();
-
-	led_on();
-	BUTTON_RESET_ON();
-	do {
-		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
-	} while (IS_BUTTON_PRESSED()); // Wait to release button
-	BUTTON_RESET_OFF();
-	led_off();
-}
 
 static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
 	uint32_t t;
 	uint8_t user_presence = 0;
 
-	if (button_press_is_consumed())
+	if (button_press_is_consumed() || button_get_press_state() < BST_READY_TO_USE)
 		return 1;
 
-	clear_button_press();
-
-	led_off();
-	if (blink == true)
-		led_blink(LED_BLINK_NUM_INF, 375);
+	if (blink == true && led_is_blinking() == false)
+		led_blink(10, 375);
 	watchdog();
 
 	t = get_ms();
@@ -99,7 +81,7 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 	{
 		led_blink_manager();                               // Run led driver to ensure blinking
         button_manager();                                 // Run button driver
-		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT    // 3 secs elapsed without button press
+		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT    // 100ms elapsed without button press
 				&& !button_press_in_progress())			// Button press has not been started
 			break;                                    // Timeout
 		u2f_delay(10);
@@ -131,7 +113,6 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 		led_off();
 #endif
 	} else {                                          // Button hasnt been pushed within the timeout
-		led_off();
 		user_presence = 0;                                     // Return error code
 	}
 
