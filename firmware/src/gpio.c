@@ -76,10 +76,10 @@ void button_manager (void) {                          // Requires at least a 750
 		    	break;
 		    case BST_PRESSED_REGISTERED:
 				if (get_ms() - button_press_t >= BUTTON_MAX_PRESS_T_MS) {
-					button_state = BST_PRESSED_REGISTERED_TRANSIENT;
+					button_state = BST_PRESSED_REGISTERED_TRANSITIONAL;
 				}
 				break;
-		    case BST_PRESSED_REGISTERED_TRANSIENT:
+		    case BST_PRESSED_REGISTERED_TRANSITIONAL:
 		    	if (get_ms() - button_press_t >= BUTTON_MIN_PRESS_T_MS_EXT) {
 					button_state = BST_PRESSED_REGISTERED_EXT;
 				}
@@ -104,7 +104,7 @@ uint8_t button_get_press_extended (void) {
 	return ((button_state == BST_PRESSED_REGISTERED_EXT)? 1 : 0);
 }
 
-uint8_t button_press_in_progress(void){
+uint8_t button_press_in_progress_normal(void){
 	return ((button_state == BST_PRESSED_RECENTLY ||
 			button_state == BST_PRESSED_REGISTERED)? 1 : 0);
 }

@@ -35,7 +35,7 @@ void button_manager (void);
 uint8_t button_get_press (void);
 uint8_t button_get_press_extended (void);
 
-uint8_t button_press_in_progress(void);
+uint8_t button_press_in_progress_normal(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
 void clear_button_press();
@@ -55,7 +55,7 @@ typedef enum {
 	BST_UNPRESSED,				// ready to use
 	BST_PRESSED_RECENTLY,		// touch registration is started
 	BST_PRESSED_REGISTERED,		// touch registered, normal press period
-	BST_PRESSED_REGISTERED_TRANSIENT,		// touch registered, normal press, but timeouted
+	BST_PRESSED_REGISTERED_TRANSITIONAL,		// touch registered, normal press, but timeouted
 	BST_PRESSED_REGISTERED_EXT, // touch registered, extended press period
 	BST_PRESSED_CONSUMED,		// touch registered and consumed, but button still not released
 
