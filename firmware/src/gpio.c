@@ -175,6 +175,8 @@ void clear_button_press(){
 	// do not clear, when:
 	if (button_get_press_state() == BST_INITIALIZING			// button is not ready for clear yet
 			|| button_get_press_state() == BST_PRESSED_RECENTLY	// button is pressed by the user
+			|| button_get_press_state() == BST_PRESSED_REGISTERED // button is pressed by the user
+			|| button_get_press_state() == BST_PRESSED_REGISTERED_TRANSITIONAL	// button is pressed by the user
 			|| button_get_press_state() == BST_PRESSED_CONSUMED	// button is pressed by the user
 			){
 		return;
