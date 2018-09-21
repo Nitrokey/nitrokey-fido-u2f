@@ -55,6 +55,7 @@ typedef enum {
 	BST_UNPRESSED,				// ready to use
 	BST_PRESSED_RECENTLY,		// touch registration is started
 	BST_PRESSED_REGISTERED,		// touch registered, normal press period
+	BST_PRESSED_REGISTERED_TRANSIENT,		// touch registered, normal press, but timeouted
 	BST_PRESSED_REGISTERED_EXT, // touch registered, extended press period
 	BST_PRESSED_CONSUMED,		// touch registered and consumed, but button still not released
 

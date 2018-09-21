@@ -36,6 +36,7 @@
 // hw settings
 #define BUTTON_MIN_PRESS_T_MS    750
 #define BUTTON_MIN_PRESS_T_MS_EXT    (10*1000)
+#define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
 #define LED_BLINK_T_ON           100                                 // ms
 #define LED_BLINK_T_OFF          (led_blink_period_t - LED_BLINK_T_ON)  // ms
