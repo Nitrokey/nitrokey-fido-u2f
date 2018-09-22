@@ -140,7 +140,8 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 #endif //#ifdef U2F_SUPPORT_SEED_CUSTOM
 #ifdef U2F_SUPPORT_WINK
 		case U2F_CUSTOM_WINK:
-			led_blink(5, 300);
+			if(led_is_blinking() == false)
+				led_blink(5, 375);
 			break;
 #endif //#ifdef U2F_SUPPORT_WINK
 		default:

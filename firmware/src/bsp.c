@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include "app.h"
 #include "bsp.h"
+#include "gpio.h"
 
 
 void u2f_delay(uint32_t ms) {
@@ -42,6 +43,7 @@ void u2f_delay(uint32_t ms) {
 		while((get_ms() - ms_now) <= 1)
 			;
 		watchdog();
+		led_blink_manager();
 	}
 }
 
