@@ -39,7 +39,7 @@
 data  uint32_t        button_press_t;                   // Timer for TaskButton() timings
 data  BUTTON_STATE_T  button_state = BST_INITIALIZING;    // Holds the actual registered logical state of the button
 
-static data uint32_t  led_blink_tim;                    // Timer for TaskLedBlink() timings
+static data uint32_t  led_blink_tim = 0;                    // Timer for TaskLedBlink() timings
 static data uint16_t  led_blink_period_t;                // Period time register
 static data uint8_t   led_blink_num;                    // Blink number counter, also an indicator if blinking is on
 
@@ -75,6 +75,11 @@ void button_manager (void) {                          // Requires at least a 750
 		    case BST_PRESSED_CONSUMED:
 		    	break;
 		    case BST_PRESSED_REGISTERED:
+				if (get_ms() - button_press_t >= BUTTON_MAX_PRESS_T_MS) {
+					button_state = BST_PRESSED_REGISTERED_TRANSITIONAL;
+				}
+				break;
+		    case BST_PRESSED_REGISTERED_TRANSITIONAL:
 		    	if (get_ms() - button_press_t >= BUTTON_MIN_PRESS_T_MS_EXT) {
 					button_state = BST_PRESSED_REGISTERED_EXT;
 				}
@@ -99,7 +104,7 @@ uint8_t button_get_press_extended (void) {
 	return ((button_state == BST_PRESSED_REGISTERED_EXT)? 1 : 0);
 }
 
-uint8_t button_press_in_progress(void){
+uint8_t button_press_in_progress_normal(void){
 	return ((button_state == BST_PRESSED_RECENTLY ||
 			button_state == BST_PRESSED_REGISTERED)? 1 : 0);
 }
@@ -130,11 +135,18 @@ bool led_is_blinking(void){
 void led_blink (uint8_t blink_num, uint16_t period_t) {
 	led_blink_num     	= blink_num;
 	led_blink_period_t 	= period_t;
+
+	if ( (button_get_press_state() > BST_META_READY_TO_USE && (get_ms() - led_blink_tim >= LED_BLINK_T_OFF) )
+			|| led_blink_num == 1)
+		LED_ON();
+
 	led_blink_tim     	= get_ms();
-    LED_ON();
 }
 
 void led_blink_manager (void) {
+	if (button_get_press_state() < BST_META_READY_TO_USE && led_blink_num != 1)
+		return;
+
 	if (led_blink_num) {                                     // LED blinking is on
 		if (IS_LED_ON()) {                                 // ON state
 			if (get_ms() - led_blink_tim >= LED_BLINK_T_ON) { // ON time expired
@@ -169,24 +181,18 @@ void clear_button_press(){
 		return;
 	// do not clear, when:
 	if (button_get_press_state() == BST_INITIALIZING			// button is not ready for clear yet
-			|| button_get_press_state() == BST_PRESSED_RECENTLY	// button is pressed by the user
-			|| button_get_press_state() == BST_PRESSED_CONSUMED	// button is pressed by the user
+			|| button_get_press_state() > BST_UNPRESSED	// button is pressed by the user
 			){
 		return;
 	}
 	last_button_cleared_time = get_ms();
+	led_off();
 
-#ifndef _PRODUCTION_RELEASE
-	led_on();
-#endif
 	BUTTON_RESET_ON();
 	do {
 		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
 	} while (IS_BUTTON_PRESSED()); // Wait to release button
 	BUTTON_RESET_OFF();
-#ifndef _PRODUCTION_RELEASE
-	led_off();
-#endif
 
 	if (button_get_press_state() == BST_INITIALIZING_READY_TO_CLEAR){
 		set_button_cleared();

@@ -69,11 +69,13 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 	uint32_t t;
 	uint8_t user_presence = 0;
 
-	if (button_press_is_consumed() || button_get_press_state() < BST_READY_TO_USE)
+	if (button_press_is_consumed() || button_get_press_state() < BST_META_READY_TO_USE)
 		return 1;
 
 	if (blink == true && led_is_blinking() == false)
-		led_blink(10, 375);
+		led_blink(10, LED_BLINK_PERIOD);
+	else if (blink == false)
+		led_off();
 	watchdog();
 
 	t = get_ms();
@@ -82,7 +84,7 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 		led_blink_manager();                               // Run led driver to ensure blinking
         button_manager();                                 // Run button driver
 		if (get_ms() - t > U2F_MS_USER_INPUT_WAIT    // 100ms elapsed without button press
-				&& !button_press_in_progress())			// Button press has not been started
+				&& !button_press_in_progress_normal())			// Button press has not been started
 			break;                                    // Timeout
 		u2f_delay(10);
 		watchdog();

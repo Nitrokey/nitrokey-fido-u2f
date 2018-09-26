@@ -224,7 +224,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
 	if (status_code != 0)
     {
 		u2f_hid_set_len(U2F_SW_LENGTH);
-    	return U2F_SW_INSUFFICIENT_MEMORY+status_code;
+    	return U2F_SW_INSUFFICIENT_MEMORY+status_code; //FIXME non-standard SW
     }
 
     u2f_sha256_start_default();
