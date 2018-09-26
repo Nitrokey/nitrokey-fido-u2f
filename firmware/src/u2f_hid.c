@@ -428,7 +428,7 @@ static uint8_t hid_u2f_parse(struct u2f_hid_msg* req)
 			u2f_hid_writeback(NULL, 0);
 			u2f_hid_flush();
 			if(led_is_blinking() == false)
-				led_blink(10, 375);
+				led_blink(10, LED_BLINK_PERIOD);
 
 			break;
 #endif
