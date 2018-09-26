@@ -39,7 +39,7 @@
 data  uint32_t        button_press_t;                   // Timer for TaskButton() timings
 data  BUTTON_STATE_T  button_state = BST_INITIALIZING;    // Holds the actual registered logical state of the button
 
-static data uint32_t  led_blink_tim;                    // Timer for TaskLedBlink() timings
+static data uint32_t  led_blink_tim = 0;                    // Timer for TaskLedBlink() timings
 static data uint16_t  led_blink_period_t;                // Period time register
 static data uint8_t   led_blink_num;                    // Blink number counter, also an indicator if blinking is on
 
@@ -135,9 +135,12 @@ bool led_is_blinking(void){
 void led_blink (uint8_t blink_num, uint16_t period_t) {
 	led_blink_num     	= blink_num;
 	led_blink_period_t 	= period_t;
-	led_blink_tim     	= get_ms();
-	if (button_get_press_state() > BST_META_READY_TO_USE || led_blink_num == 1)
+
+	if ( (button_get_press_state() > BST_META_READY_TO_USE && (get_ms() - led_blink_tim >= LED_BLINK_T_OFF) )
+			|| led_blink_num == 1)
 		LED_ON();
+
+	led_blink_tim     	= get_ms();
 }
 
 void led_blink_manager (void) {
