@@ -182,18 +182,13 @@ void clear_button_press(){
 		return;
 	}
 	last_button_cleared_time = get_ms();
+	led_off();
 
-#ifndef _PRODUCTION_RELEASE
-	led_on();
-#endif
 	BUTTON_RESET_ON();
 	do {
 		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
 	} while (IS_BUTTON_PRESSED()); // Wait to release button
 	BUTTON_RESET_OFF();
-#ifndef _PRODUCTION_RELEASE
-	led_off();
-#endif
 
 	if (button_get_press_state() == BST_INITIALIZING_READY_TO_CLEAR){
 		set_button_cleared();
