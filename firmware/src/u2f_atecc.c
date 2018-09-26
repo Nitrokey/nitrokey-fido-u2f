@@ -74,6 +74,8 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 
 	if (blink == true && led_is_blinking() == false)
 		led_blink(10, 375);
+	else if (blink == false)
+		led_off();
 	watchdog();
 
 	t = get_ms();
