@@ -136,10 +136,14 @@ void led_blink (uint8_t blink_num, uint16_t period_t) {
 	led_blink_num     	= blink_num;
 	led_blink_period_t 	= period_t;
 	led_blink_tim     	= get_ms();
-    LED_ON();
+	if (button_get_press_state() > BST_META_READY_TO_USE || led_blink_num == 1)
+		LED_ON();
 }
 
 void led_blink_manager (void) {
+	if (button_get_press_state() < BST_META_READY_TO_USE && led_blink_num != 1)
+		return;
+
 	if (led_blink_num) {                                     // LED blinking is on
 		if (IS_LED_ON()) {                                 // ON state
 			if (get_ms() - led_blink_tim >= LED_BLINK_T_ON) { // ON time expired
