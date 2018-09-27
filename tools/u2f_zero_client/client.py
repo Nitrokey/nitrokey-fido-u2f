@@ -496,25 +496,72 @@ def do_seed(h):
 
     h.close()
 
+data = []
+import yaml
+
 def do_status(h):
+    global data
+
+    periods=0
+    succ=0
+
     def signal_handler(signal, frame):
-        sys.exit(0)
+        global data
+        print()
+        if periods:
+            print('{}/{} : {:02}%'.format(succ, periods, succ*100/periods))
+            with open('out.data', 'w+') as f:
+                f.write(yaml.dump(data))
+            print(data)
+        exit(0)
+
     signal.signal(signal.SIGINT, signal_handler)
 
     t = 0
-    while True:
-        cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
+    reg = False
+    ask_touch = False
+    reg_in_this_period = False
+
+    res = None
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
+    while t < 1005:
         h.write(cmd)
-        res = None
 
         while not res or res[4] != commands.U2F_CUSTOM_STATUS:
             time.sleep(.3)
             res = h.read(64, 2*1000)
 
         res = res[7:]
-        print ('{:03}: {} {} {} {}'.format(t, res[0], res[1], res[2], res[3]))
+        print ('{:03}: {} {} {:02} {:02}'.format(t, res[0], res[1], res[2], res[3]), end=' ')
         time.sleep(0.1)
         t += 1
+        do_wink(h)
+
+        if t % 10 == 0:
+            if ask_touch and reg_in_this_period:
+                data.append(1)
+                succ += 1
+            elif ask_touch and not reg_in_this_period:
+                data.append(0)
+
+            ask_touch = not ask_touch
+            reg_in_this_period = False
+            if ask_touch:
+                periods += 1
+        if ask_touch:
+            print('Press button', end=' ')
+        else:
+            print('Release button', end=' ')
+
+        if not reg and res[1] == 5:
+            reg = True
+            reg_in_this_period = True
+            print('registered', end=' ')
+        elif reg and res[1] != 5:
+            reg = False
+        print()
+
+    signal_handler(None, None)
 
 
 
