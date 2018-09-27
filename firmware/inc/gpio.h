@@ -28,7 +28,7 @@
 #ifndef GPIO_H_
 #define GPIO_H_
 
-#define U2F_MS_CLEAR_BUTTON_PERIOD			(30*1000)
+#define U2F_MS_CLEAR_BUTTON_PERIOD			(3*1000)
 #define U2F_MS_INIT_BUTTON_PERIOD			(2*1000)
 
 void button_manager (void);
