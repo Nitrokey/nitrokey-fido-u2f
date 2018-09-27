@@ -38,6 +38,7 @@ uint8_t button_get_press_extended (void);
 uint8_t button_press_in_progress_normal(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
+void _clear_button_press(bool forced);
 void clear_button_press();
 
 void led_on (void);

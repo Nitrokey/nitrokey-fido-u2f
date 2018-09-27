@@ -136,7 +136,7 @@ int16_t main(void) {
 	while (1) {
 		watchdog();
 
-		clear_button_press();
+		_clear_button_press(false);
         button_manager();
         led_blink_manager();
         #ifdef __BUTTON_TEST__
