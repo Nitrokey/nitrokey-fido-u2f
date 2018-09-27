@@ -501,6 +501,7 @@ def do_status(h):
         sys.exit(0)
     signal.signal(signal.SIGINT, signal_handler)
 
+    t = 0
     while True:
         cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
         h.write(cmd)
@@ -510,11 +511,10 @@ def do_status(h):
             time.sleep(.3)
             res = h.read(64, 2*1000)
 
-        # print(data_to_hex_string(res))
-        # print()
         res = res[7:]
-        print(res[1], res[2], res[3])
+        print ('{:03}: {} {} {} {}'.format(t, res[0], res[1], res[2], res[3]))
         time.sleep(0.1)
+        t += 1
 
 
 
