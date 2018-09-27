@@ -513,7 +513,8 @@ def do_status(h):
             with open('out.data', 'w+') as f:
                 f.write(yaml.dump(data))
             print(data)
-        exit(0)
+        if signal and frame:
+            exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -536,6 +537,9 @@ def do_status(h):
         time.sleep(0.1)
         t += 1
         do_wink(h)
+
+        if t % 100 == 0:
+            signal_handler(None, None)
 
         if t % 10 == 0:
             if ask_touch and reg_in_this_period:
