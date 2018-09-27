@@ -68,10 +68,10 @@
 #define FEAT_FACTORY_RESET
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
-#define ATECC_SETUP_DEVICE
+//#define ATECC_SETUP_DEVICE
 
 // Uncomment to make a production firmware release, with selected flags
-//#define _PRODUCTION_RELEASE
+#define _PRODUCTION_RELEASE
 
 // Touch button test function
 //#define __BUTTON_TEST__                             // Button drives directly the LED. Minimal required press time is determined by BUTTON_MIN_PRESS_T_MS
@@ -92,7 +92,7 @@
 		#define FEAT_FACTORY_RESET
 	#endif
 	#ifndef ATECC_SETUP_DEVICE
-		#define _SECURE_EEPROM
+//		#define _SECURE_EEPROM
 	#endif
 #endif
 
