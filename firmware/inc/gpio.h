@@ -41,6 +41,10 @@ uint8_t button_press_is_consumed(void);
 void _clear_button_press(bool forced);
 void clear_button_press();
 
+// debug / status functions
+uint8_t last_button_cleared_time_delta();
+uint8_t last_button_pushed_time_delta();
+
 void led_on (void);
 void led_off (void);
 bool led_is_blinking(void);

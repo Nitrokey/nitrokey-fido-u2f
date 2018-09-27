@@ -39,6 +39,7 @@
 #include "u2f.h"
 #include "configuration.h"
 
+
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
 	struct atecc_response res;
@@ -47,6 +48,20 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 
 	switch(msg->pkt.init.cmd)
 	{
+		case U2F_CUSTOM_STATUS:
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+			out[0] = IS_BUTTON_PRESSED();
+			out[1] = button_get_press_state();
+			out[2] = last_button_cleared_time_delta();
+			out[3] = last_button_pushed_time_delta();
+			out[4] = led_is_blinking();
+			out[5] = U2F_MS_CLEAR_BUTTON_PERIOD / 100;
+			out[6] = U2F_MS_INIT_BUTTON_PERIOD / 100;
+
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			break;
+
 		case U2F_CUSTOM_UPDATE_CONFIG:
 			if(u2f_get_user_feedback_extended_wipe()){
 				memset(out, 0xEE, sizeof(msg->pkt.init.payload));

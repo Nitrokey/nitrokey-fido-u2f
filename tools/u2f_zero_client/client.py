@@ -182,6 +182,7 @@ class commands:
     U2F_CUSTOM_WINK = U2F_VENDOR_FIRST + 2
     U2F_CUSTOM_FACTORY_RESET = U2F_VENDOR_FIRST + 3
     U2F_CUSTOM_UPDATE_CONFIG = U2F_VENDOR_FIRST + 4
+    U2F_CUSTOM_STATUS = U2F_VENDOR_FIRST + 5
 
     U2F_HID_INIT = 0x86
     U2F_HID_PING = 0x81
@@ -495,6 +496,28 @@ def do_seed(h):
 
     h.close()
 
+def do_status(h):
+    def signal_handler(signal, frame):
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    while True:
+        cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
+        h.write(cmd)
+        res = None
+
+        while not res or res[4] != commands.U2F_CUSTOM_STATUS:
+            time.sleep(.3)
+            res = h.read(64, 2*1000)
+
+        # print(data_to_hex_string(res))
+        # print()
+        res = res[7:]
+        print(res[1], res[2], res[3])
+        time.sleep(0.1)
+
+
+
 def do_wipe(h):
     cmd = cmd_prefix + [commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
     h.write(cmd)
@@ -731,6 +754,9 @@ if __name__ == '__main__':
         do_passt(h)
     elif action == 'list':
         do_list()
+    elif action == 'status':
+        h = open_u2f(SN)
+        do_status(h)
     elif action == 'config-test':
         h = open_u2f(SN)
         do_config_test(h)

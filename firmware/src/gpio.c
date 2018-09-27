@@ -176,6 +176,16 @@ static void set_button_cleared(){
 
 static uint32_t last_button_cleared_time = 0;
 
+uint8_t last_button_cleared_time_delta(){
+//	range [0.0-25.5] [s/10]
+	return (get_ms() - last_button_cleared_time)/100;
+}
+
+uint8_t last_button_pushed_time_delta(){
+//	range [0.0-25.5] [s/10]
+	return (get_ms() - button_press_t)/100;
+}
+
 void clear_button_press(){
 	_clear_button_press(true);
 }
