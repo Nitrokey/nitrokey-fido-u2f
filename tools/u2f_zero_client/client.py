@@ -216,6 +216,8 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     bootloader-destroy: permanently disable the bootloader')
     print('     fingerprints: print data slots fingerprints (debug firmware only)')
     print('     factory-reset: generate new device key')
+    print('     status: print status of the device / test touch button responsiveness')
+    print('     update-config: update configuration of the device')
     sys.exit(1)
 
 def open_u2f(SN=None):
