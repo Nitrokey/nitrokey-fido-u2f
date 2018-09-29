@@ -433,21 +433,18 @@ def do_update_config(h, serial_enable=0):
     print("Press ENTER to continue", file=sys.stderr, end='')
     raw_input()
     time.sleep(0.2)
-    h.write(cmd + [serial_enable])
-    resp = None
     op_result = None
-    for i in range(15):
+    for i in range(20):
+        h.write(cmd + [serial_enable])
         print('.', file=sys.stderr, end='')
         resp = h.read(64, 1000)
         if not resp or len(resp) < 8:
-            time.sleep(0.2)
             continue
         cmdid = resp[4]
         op_result = resp[7]
-        if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [0, 1]:
+        if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [1]:
             break
-        time.sleep(0.2)
-    # print(data_to_hex_string(resp))
+        time.sleep(1)
     print()
     if not op_result or op_result == 0:
         print("Failed to change the configuration. Either touch button was not pressed in the set time, or communication error occurred")
