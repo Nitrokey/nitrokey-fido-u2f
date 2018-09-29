@@ -496,76 +496,82 @@ def do_seed(h):
 
     h.close()
 
-data = []
-import yaml
+all_test_results = []
+import yaml # pip install pyyaml
+
 
 def do_status(h):
-    global data
+    global all_test_results
+    BUTTON_STATE_REGISTERED = 5
+    SAMPLES_TARGET_COUNT = 1005
 
-    periods=0
-    succ=0
+    test_attempts = 0
+    pass_counter = 0
 
-    def signal_handler(signal, frame):
-        global data
+    def signal_handler(signal=None, frame=None):
+        global all_test_results
         print()
-        if periods:
-            print('{}/{} : {:02}%'.format(succ, periods, succ*100/periods))
+        if test_attempts > 0:
+            print('{}/{} : {:02}%'.format(
+                pass_counter, test_attempts, pass_counter*100/test_attempts))
             with open('out.data', 'w+') as f:
-                f.write(yaml.dump(data))
-            print(data)
-        if signal and frame:
+                f.write(yaml.dump(all_test_results))
+            print(all_test_results)
+        if signal or frame:
             exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    t = 0
-    reg = False
+    sample_no = 0
     ask_touch = False
     reg_in_this_period = False
+    touch_registered = False
+    old_touch_registered = False
 
-    res = None
     cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
-    while t < 1005:
+    while sample_no < SAMPLES_TARGET_COUNT:
         h.write(cmd)
 
+        res = None
         while not res or res[4] != commands.U2F_CUSTOM_STATUS:
             time.sleep(.1)
             res = h.read(64, 2*1000)
 
         res = res[7:]
-        print ('{:03}: {} {} {:02} {:02}'.format(t, res[0], res[1], res[2], res[3]), end=' ')
+        print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
         time.sleep(0.1)
-        t += 1
+        sample_no += 1
         do_wink(h)
 
-        if t % 100 == 0:
-            signal_handler(None, None)
-
-        if t % 10 == 0:
+        if sample_no % 10 == 0:
             if ask_touch and reg_in_this_period:
-                data.append(1)
-                succ += 1
+                all_test_results.append(1)
+                pass_counter += 1
             elif ask_touch and not reg_in_this_period:
-                data.append(0)
+                all_test_results.append(0)
 
             ask_touch = not ask_touch
             reg_in_this_period = False
             if ask_touch:
-                periods += 1
+                test_attempts += 1
+
         if ask_touch:
             print('Press button', end=' ')
         else:
             print('Release button', end=' ')
 
-        if not reg and res[1] == 5:
-            reg = True
+        if sample_no % 100 == 0:
+            signal_handler()
+
+        old_touch_registered = touch_registered
+        touch_registered = res[1] == BUTTON_STATE_REGISTERED
+        if not reg_in_this_period and ask_touch and touch_registered and not old_touch_registered:
             reg_in_this_period = True
             print('registered', end=' ')
-        elif reg and res[1] != 5:
-            reg = False
         print()
+        sys.stdout.flush()
 
-    signal_handler(None, None)
+    signal_handler()
 
 
 
