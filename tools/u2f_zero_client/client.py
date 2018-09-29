@@ -437,9 +437,15 @@ def do_update_config(h, serial_enable=0):
     for i in range(20):
         h.write(cmd + [serial_enable])
         print('.', file=sys.stderr, end='')
-        resp = h.read(64, 1000)
-        if not resp or len(resp) < 8:
-            continue
+
+        resp = None
+        while not resp or len(resp) < 8:
+            resp = h.read(64, 1000)
+            if not resp or len(resp) < 8:
+                print('+', file=sys.stderr, end='')
+                time.sleep(.1)
+                continue
+
         cmdid = resp[4]
         op_result = resp[7]
         if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [1]:
