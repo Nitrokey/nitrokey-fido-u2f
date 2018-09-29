@@ -104,9 +104,8 @@ uint8_t button_get_press_extended (void) {
 	return ((button_state == BST_PRESSED_REGISTERED_EXT)? 1 : 0);
 }
 
-uint8_t button_press_in_progress_normal(void){
-	return ((button_state == BST_PRESSED_RECENTLY ||
-			button_state == BST_PRESSED_REGISTERED)? 1 : 0);
+uint8_t button_press_in_progress(void){
+	return ( (button_state > BST_UNPRESSED)? 1 : 0);
 }
 
 void button_press_set_consumed(void){

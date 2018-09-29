@@ -35,7 +35,7 @@ void button_manager (void);
 uint8_t button_get_press (void);
 uint8_t button_get_press_extended (void);
 
-uint8_t button_press_in_progress_normal(void);
+uint8_t button_press_in_progress(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
 void _clear_button_press(bool forced);
