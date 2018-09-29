@@ -529,7 +529,7 @@ def do_status(h):
         h.write(cmd)
 
         while not res or res[4] != commands.U2F_CUSTOM_STATUS:
-            time.sleep(.3)
+            time.sleep(.1)
             res = h.read(64, 2*1000)
 
         res = res[7:]
