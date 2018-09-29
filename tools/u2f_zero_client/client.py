@@ -507,6 +507,7 @@ def do_status(h):
 
     test_attempts = 0
     pass_counter = 0
+    res = None
 
     def signal_handler(signal=None, frame=None):
         global all_test_results
@@ -517,6 +518,7 @@ def do_status(h):
             with open('out.data', 'w+') as f:
                 f.write(yaml.dump(all_test_results))
             print(all_test_results)
+            print('test run settings: blinking: {}, clear period: {}, button init period: {}'.format(res[4], res[5], res[6]))
         if signal or frame:
             exit(0)
 
@@ -532,7 +534,6 @@ def do_status(h):
     while sample_no < SAMPLES_TARGET_COUNT:
         h.write(cmd)
 
-        res = None
         while not res or res[4] != commands.U2F_CUSTOM_STATUS:
             time.sleep(.1)
             res = h.read(64, 2*1000)
