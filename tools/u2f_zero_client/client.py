@@ -547,7 +547,7 @@ def do_status(h):
         print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
         time.sleep(0.1)
         sample_no += 1
-        do_wink(h)
+        #do_wink(h)
 
         if sample_no % 10 == 0:
             if ask_touch and reg_in_this_period:
