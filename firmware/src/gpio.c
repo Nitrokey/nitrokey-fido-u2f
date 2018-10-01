@@ -110,8 +110,6 @@ uint8_t button_press_in_progress(void){
 
 void button_press_set_consumed(void){
 	button_state = BST_PRESSED_CONSUMED;
-
-	_clear_button_press(true);
 }
 
 uint8_t button_press_is_consumed(void){
