@@ -51,7 +51,7 @@
 #define U2F_DEVICE_KEY_SLOT			5
 
 // this a BCD, e.g. version 12.34 -> 0x1234
-#define NK_FIRMWARE_VERSION			0x0002
+#define NK_FIRMWARE_VERSION			0x0100
 
 // Comment these out to fit firmware with a bootloader.
 #define U2F_SUPPORT_WINK
