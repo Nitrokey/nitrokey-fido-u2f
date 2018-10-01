@@ -38,9 +38,9 @@
 #define BUTTON_MIN_PRESS_T_MS_EXT    (10*1000)
 #define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
-#define LED_BLINK_T_ON           100                                 // ms
+#define LED_BLINK_T_ON           (LED_BLINK_PERIOD/2)                                 // ms
 #define LED_BLINK_T_OFF          (led_blink_period_t - LED_BLINK_T_ON)  // ms
-#define LED_BLINK_PERIOD         (375)                                 // ms
+#define LED_BLINK_PERIOD         (780)                                 // ms
 #define LED_BLINK_NUM_INF        255
 
 // application settings
@@ -51,9 +51,8 @@
 #define U2F_DEVICE_KEY_SLOT			5
 
 // this a BCD, e.g. version 12.34 -> 0x1234
-#define NK_FIRMWARE_VERSION			0x0002
+#define NK_FIRMWARE_VERSION			0x0100
 
-// Comment these out to fit firmware with a bootloader.
 #define U2F_SUPPORT_WINK
 #define U2F_SUPPORT_HID_LOCK
 #define U2F_SUPPORT_RNG_CUSTOM
