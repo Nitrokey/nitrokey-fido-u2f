@@ -65,6 +65,7 @@
 //#define DEBUG_GATHER_ATECC_ERRORS
 
 #define FEAT_FACTORY_RESET
+#define FEAT_SANITY_CHECK
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
 #define ATECC_SETUP_DEVICE
