@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2016, Conor Patrick
  * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
@@ -25,37 +24,21 @@
 
  */
 
-#ifndef EEPROM_H_
-#define EEPROM_H_
-
-#include "app.h"
-
-void eeprom_init();
-
-void eeprom_read(uint16_t addr, uint8_t * buf, uint8_t len);
-void eeprom_xor(uint16_t addr, uint8_t * out_buf, uint8_t len);
-
-void _eeprom_write(uint16_t addr, uint8_t * buf, uint8_t len, uint8_t flags);
 
 
-#define eeprom_write(a,b,l) 		_eeprom_write((a),(b),(l),0x1)
-#define eeprom_erase(a) 			_eeprom_write((a),appdata.tmp,1,0x3)
+#ifndef INC_SANITY_CHECK_H_
+#define INC_SANITY_CHECK_H_
 
-#define EEPROM_PAGE_START(p)		(0x200*(p))
-#define EEPROM_KB_START(p)			(EEPROM_PAGE_START(2*(p)))
-#define EEPROM_PAGE_COUNT			(79)
-#define EEPROM_LAST_PAGE_NUM		(EEPROM_PAGE_COUNT-1)
-// 0x8000 -> 20kB -> EEPROM page 40
-#define EEPROM_DATA_START 			(EEPROM_PAGE_START(40))
-// pages are 512-bytes each, required to be cleared separately
-// FIXME allocate all constants on one page (36 + 36 + 16), when required
-#define EEPROM_DATA_RMASK 			EEPROM_PAGE_START(40)
-#define EEPROM_DATA_WMASK 			EEPROM_PAGE_START(41)
-#define EEPROM_DATA_U2F_CONST  		EEPROM_PAGE_START(42)
-#define EEPROM_DATA_SERIAL			EEPROM_PAGE_START(43)
-#define EEPROM_DATA_CONFIG			EEPROM_PAGE_START(44)
+typedef struct {
+	uint8_t constants_filled : 1;
+	// compilation switches
+	uint8_t eeprom_protection : 1;
+	uint8_t fake_touch : 1;
+	uint8_t disable_watchdog : 1;
+	uint8_t setup_firmware : 1;
+} check_info;
 
-#define U2F_CONST_LENGTH			(32)
-#define EEPROM_DATA_RWMASK_LENGTH	(36)
+check_info sanity_check_builder();
+bool sanity_check(check_info *out_c);
 
-#endif /* EEPROM_H_ */
+#endif /* INC_SANITY_CHECK_H_ */

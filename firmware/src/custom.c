@@ -38,7 +38,7 @@
 #include "eeprom.h"
 #include "u2f.h"
 #include "configuration.h"
-
+#include "sanity-check.h"
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
@@ -48,6 +48,17 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 
 	switch(msg->pkt.init.cmd)
 	{
+#ifdef FEAT_SANITY_CHECK
+		case U2F_SANITY_CHECK:
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+
+			out[0] = sanity_check((check_info*) (out+1) );
+
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			break;
+#endif //FEAT_SANITY_CHECK
+
 		case U2F_CUSTOM_STATUS:
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
 			out[0] = IS_BUTTON_PRESSED();
