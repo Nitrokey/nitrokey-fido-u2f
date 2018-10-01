@@ -216,8 +216,8 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     bootloader-destroy: permanently disable the bootloader')
     print('     fingerprints: print data slots fingerprints (debug firmware only)')
     print('     factory-reset: generate new device key')
-    print('     status: print status of the device / test touch button responsiveness')
-    print('     update-config: update configuration of the device')
+    print('     status <should_blink: int: 0/1>: print status of the device / test touch button responsiveness')
+    print('     update-config <show SN: int: 0/1>: update configuration of the device')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -505,7 +505,7 @@ all_test_results = []
 import yaml # pip install pyyaml
 
 
-def do_status(h):
+def do_status(h, wink=True):
     global all_test_results
     BUTTON_STATE_REGISTERED = 5
     SAMPLES_TARGET_COUNT = 1005
@@ -513,6 +513,9 @@ def do_status(h):
     test_attempts = 0
     pass_counter = 0
     res = None
+
+    if wink:
+        print('Blinking enabled')
 
     def signal_handler(signal=None, frame=None):
         global all_test_results
@@ -547,7 +550,8 @@ def do_status(h):
         print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
         time.sleep(0.1)
         sample_no += 1
-        do_wink(h)
+        if wink:
+            do_wink(h)
 
         if sample_no % 10 == 0:
             if ask_touch and reg_in_this_period:
@@ -819,7 +823,7 @@ if __name__ == '__main__':
         do_list()
     elif action == 'status':
         h = open_u2f(SN)
-        do_status(h)
+        do_status(h, bool(int(sys.argv[2])) if len(sys.argv) > 2 else True)
     elif action == 'config-test':
         h = open_u2f(SN)
         do_config_test(h)
