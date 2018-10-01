@@ -182,6 +182,7 @@ class commands:
     U2F_CUSTOM_WINK = U2F_VENDOR_FIRST + 2
     U2F_CUSTOM_FACTORY_RESET = U2F_VENDOR_FIRST + 3
     U2F_CUSTOM_UPDATE_CONFIG = U2F_VENDOR_FIRST + 4
+    U2F_CUSTOM_STATUS = U2F_VENDOR_FIRST + 5
 
     U2F_HID_INIT = 0x86
     U2F_HID_PING = 0x81
@@ -215,6 +216,8 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     bootloader-destroy: permanently disable the bootloader')
     print('     fingerprints: print data slots fingerprints (debug firmware only)')
     print('     factory-reset: generate new device key')
+    print('     status <should_blink: int: 0/1>: print status of the device / test touch button responsiveness')
+    print('     update-config <show SN: int: 0/1>: update configuration of the device')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -430,21 +433,24 @@ def do_update_config(h, serial_enable=0):
     print("Press ENTER to continue", file=sys.stderr, end='')
     raw_input()
     time.sleep(0.2)
-    h.write(cmd + [serial_enable])
-    resp = None
     op_result = None
-    for i in range(15):
+    for i in range(20):
+        h.write(cmd + [serial_enable])
         print('.', file=sys.stderr, end='')
-        resp = h.read(64, 1000)
-        if not resp or len(resp) < 8:
-            time.sleep(0.2)
-            continue
+
+        resp = None
+        while not resp or len(resp) < 8:
+            resp = h.read(64, 1000)
+            if not resp or len(resp) < 8:
+                print('+', file=sys.stderr, end='')
+                time.sleep(.1)
+                continue
+
         cmdid = resp[4]
         op_result = resp[7]
-        if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [0, 1]:
+        if cmdid == commands.U2F_CUSTOM_UPDATE_CONFIG and op_result in [1]:
             break
-        time.sleep(0.2)
-    # print(data_to_hex_string(resp))
+        time.sleep(1)
     print()
     if not op_result or op_result == 0:
         print("Failed to change the configuration. Either touch button was not pressed in the set time, or communication error occurred")
@@ -494,6 +500,90 @@ def do_seed(h):
             num += len(c)
 
     h.close()
+
+all_test_results = []
+import yaml # pip install pyyaml
+
+
+def do_status(h, wink=True):
+    global all_test_results
+    BUTTON_STATE_REGISTERED = 5
+    SAMPLES_TARGET_COUNT = 1005
+
+    test_attempts = 0
+    pass_counter = 0
+    res = None
+
+    if wink:
+        print('Blinking enabled')
+
+    def signal_handler(signal=None, frame=None):
+        global all_test_results
+        print()
+        if test_attempts > 0:
+            print('{}/{} : {:02}%'.format(
+                pass_counter, test_attempts, pass_counter*100/test_attempts))
+            with open('out.data', 'w+') as f:
+                f.write(yaml.dump(all_test_results))
+            print(all_test_results)
+            print('test run settings: blinking: {}, clear period: {}, button init period: {}'.format(res[4], res[5], res[6]))
+        if signal or frame:
+            exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    sample_no = 0
+    ask_touch = False
+    reg_in_this_period = False
+    touch_registered = False
+    old_touch_registered = False
+
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
+    while sample_no < SAMPLES_TARGET_COUNT:
+        h.write(cmd)
+
+        while not res or res[4] != commands.U2F_CUSTOM_STATUS:
+            time.sleep(.1)
+            res = h.read(64, 2*1000)
+
+        res = res[7:]
+        print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
+        time.sleep(0.1)
+        sample_no += 1
+        if wink:
+            do_wink(h)
+
+        if sample_no % 10 == 0:
+            if ask_touch and reg_in_this_period:
+                all_test_results.append(1)
+                pass_counter += 1
+            elif ask_touch and not reg_in_this_period:
+                all_test_results.append(0)
+
+            ask_touch = not ask_touch
+            reg_in_this_period = False
+            if ask_touch:
+                test_attempts += 1
+
+        if ask_touch:
+            print('Press button', end=' ')
+        else:
+            print('Release button', end=' ')
+
+        if sample_no % 100 == 0:
+            signal_handler()
+
+        old_touch_registered = touch_registered
+        touch_registered = res[1] == BUTTON_STATE_REGISTERED
+        if not reg_in_this_period and ask_touch and touch_registered and not old_touch_registered:
+            reg_in_this_period = True
+            print('registered', end=' ')
+        print()
+        sys.stdout.flush()
+
+    signal_handler()
+
+
 
 def do_wipe(h):
     cmd = cmd_prefix + [commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
@@ -731,6 +821,9 @@ if __name__ == '__main__':
         do_passt(h)
     elif action == 'list':
         do_list()
+    elif action == 'status':
+        h = open_u2f(SN)
+        do_status(h, bool(int(sys.argv[2])) if len(sys.argv) > 2 else True)
     elif action == 'config-test':
         h = open_u2f(SN)
         do_config_test(h)

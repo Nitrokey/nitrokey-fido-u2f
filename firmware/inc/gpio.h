@@ -28,17 +28,22 @@
 #ifndef GPIO_H_
 #define GPIO_H_
 
-#define U2F_MS_CLEAR_BUTTON_PERIOD			(10*1000)
+#define U2F_MS_CLEAR_BUTTON_PERIOD			(20*1000)
 #define U2F_MS_INIT_BUTTON_PERIOD			(2*1000)
 
 void button_manager (void);
 uint8_t button_get_press (void);
 uint8_t button_get_press_extended (void);
 
-uint8_t button_press_in_progress_normal(void);
+uint8_t button_press_in_progress(void);
 void button_press_set_consumed(void);
 uint8_t button_press_is_consumed(void);
+void _clear_button_press(bool forced);
 void clear_button_press();
+
+// debug / status functions
+uint8_t last_button_cleared_time_delta();
+uint8_t last_button_pushed_time_delta();
 
 void led_on (void);
 void led_off (void);

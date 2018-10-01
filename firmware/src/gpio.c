@@ -104,13 +104,14 @@ uint8_t button_get_press_extended (void) {
 	return ((button_state == BST_PRESSED_REGISTERED_EXT)? 1 : 0);
 }
 
-uint8_t button_press_in_progress_normal(void){
-	return ((button_state == BST_PRESSED_RECENTLY ||
-			button_state == BST_PRESSED_REGISTERED)? 1 : 0);
+uint8_t button_press_in_progress(void){
+	return ( (button_state > BST_UNPRESSED)? 1 : 0);
 }
 
 void button_press_set_consumed(void){
 	button_state = BST_PRESSED_CONSUMED;
+
+	_clear_button_press(true);
 }
 
 uint8_t button_press_is_consumed(void){
@@ -174,25 +175,44 @@ static void set_button_cleared(){
 
 static uint32_t last_button_cleared_time = 0;
 
+uint8_t last_button_cleared_time_delta(){
+//	range [0.0-25.5] [s/10]
+	return (get_ms() - last_button_cleared_time)/100;
+}
+
+uint8_t last_button_pushed_time_delta(){
+//	range [0.0-25.5] [s/10]
+	return (get_ms() - button_press_t)/100;
+}
+
 void clear_button_press(){
-	// do not clear if enough time has not passed, unless button is ready to be cleared
-	if (button_get_press_state() != BST_INITIALIZING_READY_TO_CLEAR
-			&& (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD) )
-		return;
-	// do not clear, when:
-	if (button_get_press_state() == BST_INITIALIZING			// button is not ready for clear yet
-			|| button_get_press_state() > BST_UNPRESSED	// button is pressed by the user
-			){
-		return;
+	_clear_button_press(false);
+}
+
+void _clear_button_press(bool forced){
+	if(!forced){
+		// do not clear if enough time has not passed, unless button is ready to be cleared
+		if (button_get_press_state() != BST_INITIALIZING_READY_TO_CLEAR
+				&& (get_ms() - last_button_cleared_time < U2F_MS_CLEAR_BUTTON_PERIOD) )
+			return;
+		// do not clear, when:
+		if (button_get_press_state() == BST_INITIALIZING			// button is not ready for clear yet
+				|| button_get_press_state() > BST_UNPRESSED	// button is pressed by the user
+				){
+			return;
+		}
 	}
+
 	last_button_cleared_time = get_ms();
 	led_off();
+
 
 	BUTTON_RESET_ON();
 	do {
 		u2f_delay(6); 				//6ms activation time + 105ms maximum sleep in NORMAL power mode
 	} while (IS_BUTTON_PRESSED()); // Wait to release button
 	BUTTON_RESET_OFF();
+
 
 	if (button_get_press_state() == BST_INITIALIZING_READY_TO_CLEAR){
 		set_button_cleared();
