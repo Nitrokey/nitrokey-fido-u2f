@@ -53,7 +53,6 @@
 // this a BCD, e.g. version 12.34 -> 0x1234
 #define NK_FIRMWARE_VERSION			0x0100
 
-// Comment these out to fit firmware with a bootloader.
 #define U2F_SUPPORT_WINK
 #define U2F_SUPPORT_HID_LOCK
 #define U2F_SUPPORT_RNG_CUSTOM
