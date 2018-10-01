@@ -130,12 +130,12 @@ SI_SEGMENT_VARIABLE(configDesc[],
 #define PROD_STRING                            "Nitrokey FIDO U2F"
 
 #ifdef _PRODUCTION_RELEASE
-#define SER_STRING 							   "CAFEBABEFFFFFFFF"
+#define SER_STRING 							   "0000000000000000"
 #else
 #ifdef ATECC_SETUP_DEVICE
-#define SER_STRING 							   "CAFEBABEF-setup-"
+#define SER_STRING 							   "DEV-FIRM-setup-"
 #else
-#define SER_STRING 							   "CAFEBABEF-prod--"
+#define SER_STRING 							   "DEV-FIRM--prod--"
 #endif
 #endif
 
