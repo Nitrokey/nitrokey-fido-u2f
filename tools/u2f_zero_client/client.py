@@ -505,7 +505,8 @@ def do_seed(h):
 
 
 def get_bit(a, b):
-    return a & (1 << b)
+    v = a & (1 << b)
+    return 1 if v > 0 else 0
 
 
 def do_sanity_check(h):
