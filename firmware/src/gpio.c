@@ -42,7 +42,7 @@ data  BUTTON_STATE_T  button_state = BST_INITIALIZING;    // Holds the actual re
 
 static data uint32_t  led_blink_tim = 0;                    // Timer for TaskLedBlink() timings
 static data uint16_t  led_blink_period_t;                // Period time register
-static data uint16_t  led_blink_ON_t;                // Period time register
+static data uint16_t  led_blink_ON_t;                // ON time register
 static data uint8_t   led_blink_num;                    // Blink number counter, also an indicator if blinking is on
 
 static data uint32_t  button_manager_start_t = 0;
