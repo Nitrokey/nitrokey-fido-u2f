@@ -65,12 +65,14 @@ bool test_if_memory_empty(uint16_t addr, uint8_t len){
 	eeprom_read(addr, buf, len);
 
 	// make it constant time, do not return early
+	// reject all 0xFF's
 	for (i=0; i<len; i++){
 		zeroes += (buf[i] == 0xFF);
 	}
 	res &= (zeroes != len);
 	zeroes = 0;
 
+	// reject all 0x00's
 	for (i=0; i<len; i++){
 		zeroes += (buf[i] == 0x00);
 	}
