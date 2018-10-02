@@ -41,4 +41,6 @@ typedef struct {
 check_info sanity_check_builder();
 bool sanity_check(check_info *out_c);
 
+extern bool sanity_check_passed;
+
 #endif /* INC_SANITY_CHECK_H_ */
