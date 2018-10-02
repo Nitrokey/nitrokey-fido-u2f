@@ -58,20 +58,25 @@ bool sanity_check_passed = false;
 bool test_if_memory_empty(uint16_t addr, uint8_t len){
 	uint8_t buf[36];
 	uint8_t i, zeroes = 0;
-	bool res;
+	bool res = true;
 	if (len > sizeof(buf)) return false;
 
 	eeprom_read(addr, buf, len);
 
 	// make it constant time, do not return early
 	for (i=0; i<len; i++){
-		zeroes += (buf[i] == 0xFF ||  buf[i] == 0x00);
+		zeroes += (buf[i] == 0xFF);
 	}
-
-	res = zeroes != len;
+	res &= (zeroes != len);
 	zeroes = 0;
-	memset(buf, 0, len);
 
+	for (i=0; i<len; i++){
+		zeroes += (buf[i] == 0x00);
+	}
+	res &= (zeroes != len);
+	zeroes = 0;
+
+	memset(buf, 0, len);
 	return res;
 }
 
