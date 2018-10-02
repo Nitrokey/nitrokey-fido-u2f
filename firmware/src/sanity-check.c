@@ -53,6 +53,7 @@
 	#define _setup 0
 #endif
 
+bool sanity_check_passed = false;
 
 bool test_if_memory_empty(uint16_t addr, uint8_t len){
 	uint8_t buf[36];
@@ -84,6 +85,7 @@ bool test_if_memory_empty(uint16_t addr, uint8_t len){
 check_info sanity_check_builder(){
 	check_info c;
 	c.constants_filled = true;
+	// make it constant time, do not return early
 	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_RMASK, EEPROM_DATA_RWMASK_LENGTH);
 	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_WMASK, EEPROM_DATA_RWMASK_LENGTH);
 	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_U2F_CONST, U2F_CONST_LENGTH);
@@ -100,6 +102,7 @@ bool sanity_check(check_info *out_c){
 	c = sanity_check_builder();
 	if (out_c != NULL)
 		*out_c = c;
-	return c.constants_filled && c.eeprom_protection && !c.fake_touch
+	sanity_check_passed = c.constants_filled && c.eeprom_protection && !c.fake_touch
 			&& !c.disable_watchdog && !c.setup_firmware;
+	return sanity_check_passed;
 }
