@@ -66,7 +66,7 @@
 #define FEAT_SANITY_CHECK
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
-#define ATECC_SETUP_DEVICE
+//#define ATECC_SETUP_DEVICE
 
 // Uncomment to make a production firmware release, with selected flags
 //#define _PRODUCTION_RELEASE
