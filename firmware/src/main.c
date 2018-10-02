@@ -44,6 +44,7 @@
 #include "custom.h"
 #include "u2f.h"
 #include "tests.h"
+#include "sanity-check.h"
 
 data struct APP_DATA appdata;
 
@@ -132,6 +133,7 @@ int16_t main(void) {
 	led_off();
 
 	led_blink(1, 0);                                   // Blink once after successful startup
+	sanity_check(NULL);
 
 	while (1) {
 		watchdog();
