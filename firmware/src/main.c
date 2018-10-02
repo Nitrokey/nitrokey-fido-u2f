@@ -132,8 +132,12 @@ int16_t main(void) {
 	BUTTON_RESET_OFF();
 	led_off();
 
-	led_blink(1, 0);                                   // Blink once after successful startup
 	sanity_check(NULL);
+
+	if (sanity_check_passed)
+		led_blink(1, 0);                                   // Blink once after successful startup
+	else
+		led_blink(LED_BLINK_NUM_INF, 700); // blink error
 
 	while (1) {
 		watchdog();
