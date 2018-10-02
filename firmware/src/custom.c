@@ -52,7 +52,8 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 		case U2F_SANITY_CHECK:
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
 
-			out[0] = sanity_check((check_info*) (out+1) );
+			out[0] = sanity_check_passed;
+			out[1] = *((uint8_t*) &sanity_check_info);
 
 			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
 			usb_write((uint8_t*)msg, 64);

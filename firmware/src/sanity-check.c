@@ -54,6 +54,7 @@
 #endif
 
 bool sanity_check_passed = false;
+check_info sanity_check_info;
 
 bool test_if_memory_empty(uint16_t addr, uint8_t len){
 	uint8_t buf[36];
@@ -83,26 +84,25 @@ bool test_if_memory_empty(uint16_t addr, uint8_t len){
 }
 
 check_info sanity_check_builder(){
-	check_info c;
-	c.constants_filled = true;
+	sanity_check_info.constants_filled = true;
 	// make it constant time, do not return early
-	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_RMASK, EEPROM_DATA_RWMASK_LENGTH);
-	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_WMASK, EEPROM_DATA_RWMASK_LENGTH);
-	c.constants_filled &= test_if_memory_empty(EEPROM_DATA_U2F_CONST, U2F_CONST_LENGTH);
-	c.eeprom_protection = _secure_eeprom;
-	c.fake_touch = _fake_touch;
-	c.disable_watchdog = _disable_watchdog;
-	c.setup_firmware = _setup;
+	sanity_check_info.constants_filled &= test_if_memory_empty(EEPROM_DATA_RMASK, EEPROM_DATA_RWMASK_LENGTH);
+	sanity_check_info.constants_filled &= test_if_memory_empty(EEPROM_DATA_WMASK, EEPROM_DATA_RWMASK_LENGTH);
+	sanity_check_info.constants_filled &= test_if_memory_empty(EEPROM_DATA_U2F_CONST, U2F_CONST_LENGTH);
+	sanity_check_info.eeprom_protection = _secure_eeprom;
+	sanity_check_info.fake_touch = _fake_touch;
+	sanity_check_info.disable_watchdog = _disable_watchdog;
+	sanity_check_info.setup_firmware = _setup;
 
-	return c;
+	return sanity_check_info;
 }
 
 bool sanity_check(check_info *out_c){
-	check_info c;
-	c = sanity_check_builder();
+	//FIXME add button test?
+	sanity_check_builder();
 	if (out_c != NULL)
-		*out_c = c;
-	sanity_check_passed = c.constants_filled && c.eeprom_protection && !c.fake_touch
-			&& !c.disable_watchdog && !c.setup_firmware;
+		*out_c = sanity_check_info;
+	sanity_check_passed = sanity_check_info.constants_filled && sanity_check_info.eeprom_protection && !sanity_check_info.fake_touch
+			&& !sanity_check_info.disable_watchdog && !sanity_check_info.setup_firmware;
 	return sanity_check_passed;
 }
