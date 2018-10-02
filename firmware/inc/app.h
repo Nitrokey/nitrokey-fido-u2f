@@ -89,6 +89,9 @@
 	#ifndef FEAT_FACTORY_RESET
 		#define FEAT_FACTORY_RESET
 	#endif
+	#ifndef FEAT_SANITY_CHECK
+		#define FEAT_SANITY_CHECK
+	#endif
 	#ifndef ATECC_SETUP_DEVICE
 		#define _SECURE_EEPROM
 	#endif
