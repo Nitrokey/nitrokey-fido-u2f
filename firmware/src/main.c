@@ -136,8 +136,10 @@ int16_t main(void) {
 
 	if (sanity_check_passed)
 		led_blink(1, 0);                                   // Blink once after successful startup
-	else
-		led_blink(LED_BLINK_NUM_INF, 700); // blink error
+	else{
+		led_blink(LED_BLINK_NUM_INF, 200); // blink error
+		led_change_ON_time(100);
+	}
 
 	while (1) {
 		watchdog();
