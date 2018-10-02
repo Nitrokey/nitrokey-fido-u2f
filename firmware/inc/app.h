@@ -29,9 +29,7 @@
 #define APP_H_
 
 #include <SI_EFM8UB3_Register_Enums.h>
-#include <stdarg.h>
 #include "u2f_hid.h"
-
 
 // hw settings
 #define BUTTON_MIN_PRESS_T_MS    750
