@@ -137,6 +137,7 @@ static void dump_signature_der(uint8_t * sig)
     u2f_response_writeback(sig+32, 32);
 }
 
+#include "sanity-check.h"
 
 static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t control)
 {
@@ -173,7 +174,7 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
 
 
-	if (u2f_get_user_feedback())
+	if (!sanity_check_passed || u2f_get_user_feedback())
 	{
 		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_CONDITIONS_NOT_SATISFIED;
@@ -214,7 +215,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
 
     const uint16_t attest_size = u2f_attestation_cert_size();
 
-    if (u2f_get_user_feedback())
+    if (!sanity_check_passed ||u2f_get_user_feedback())
     {
     	u2f_hid_set_len(U2F_SW_LENGTH);
         return U2F_SW_CONDITIONS_NOT_SATISFIED;
