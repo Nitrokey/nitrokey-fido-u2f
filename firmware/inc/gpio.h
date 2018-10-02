@@ -50,7 +50,7 @@ void led_off (void);
 bool led_is_blinking(void);
 void led_blink (uint8_t blink_num, uint16_t period_t);
 void led_blink_manager (void);
-
+void led_change_ON_time(uint16_t ON_time);
 
 typedef enum {
 	BST_INITIALIZING,			// wait for the charge to settle down

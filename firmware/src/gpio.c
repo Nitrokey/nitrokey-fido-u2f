@@ -42,6 +42,7 @@ data  BUTTON_STATE_T  button_state = BST_INITIALIZING;    // Holds the actual re
 
 static data uint32_t  led_blink_tim = 0;                    // Timer for TaskLedBlink() timings
 static data uint16_t  led_blink_period_t;                // Period time register
+static data uint16_t  led_blink_ON_t;                // Period time register
 static data uint8_t   led_blink_num;                    // Blink number counter, also an indicator if blinking is on
 
 static data uint32_t  button_manager_start_t = 0;
@@ -134,9 +135,14 @@ bool led_is_blinking(void){
 	return led_blink_num != 0;
 }
 
+void led_change_ON_time(uint16_t ON_time){
+	led_blink_ON_t = ON_time;
+}
+
 void led_blink (uint8_t blink_num, uint16_t period_t) {
 	led_blink_num     	= blink_num;
 	led_blink_period_t 	= period_t;
+	led_blink_ON_t = LED_BLINK_T_ON;
 
 	if ( (button_get_press_state() > BST_META_READY_TO_USE && (get_ms() - led_blink_tim >= LED_BLINK_T_OFF) )
 			|| led_blink_num == 1)
@@ -153,7 +159,7 @@ void led_blink_manager (void) {
 
 	if (led_blink_num) {                                     // LED blinking is on
 		if (IS_LED_ON()) {                                 // ON state
-			if (get_ms() - led_blink_tim >= LED_BLINK_T_ON) { // ON time expired
+			if (get_ms() - led_blink_tim >= led_blink_ON_t) { // ON time expired
 				LED_OFF();                                 // LED physical state -> OFF
 				if (led_blink_num) {                         // It isnt the last blink round: initialize OFF state:
 					led_blink_tim   = get_ms();		       // Init OFF timer

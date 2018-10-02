@@ -37,7 +37,7 @@
 #define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
 #define LED_BLINK_T_ON           (LED_BLINK_PERIOD/2)                                 // ms
-#define LED_BLINK_T_OFF          (led_blink_period_t - LED_BLINK_T_ON)  // ms
+#define LED_BLINK_T_OFF          (led_blink_period_t - led_blink_ON_t)  // ms
 #define LED_BLINK_PERIOD         (780)                                 // ms
 #define LED_BLINK_NUM_INF        255
 
