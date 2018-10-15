@@ -14,6 +14,7 @@
 #include <string.h>
 #include <efm8_usb.h>
 #include "descriptors.h"
+#include "app.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +60,7 @@ SI_SEGMENT_VARIABLE(deviceDesc[],
 	64,// bMaxPacketSize
 	USB_VENDOR_ID,// idVendor
 	USB_PRODUCT_ID,// idProduct
-	htole16(0x0100),// bcdDevice
+	htole16(NK_FIRMWARE_VERSION), // bcdDevice
 	1,// iManufacturer
 	2,// iProduct
 	3,// iSerialNumber
@@ -127,20 +128,30 @@ SI_SEGMENT_VARIABLE(configDesc[],
 
 #define MFR_STRING                             "Nitrokey"
 #define PROD_STRING                            "Nitrokey FIDO U2F"
-#define SER_STRING 							   "CAFEBABEFFFFFFFF"
+
+#ifdef _PRODUCTION_RELEASE
+#define SER_STRING 							   "0000000000000000"
+#else
+#ifdef ATECC_SETUP_DEVICE
+#define SER_STRING 							   "DEV-FIRM-setup-"
+#else
+#define SER_STRING 							   "DEV-FIRM--prod--"
+#endif
+#endif
+
 #define INT0_STRING                            "Nitrokey FIDO U2F"
 
 
 LANGID_STATIC_CONST_STRING_DESC( langDesc[], LANG_STRING );
-UTF16LE_PACKED_STATIC_CONST_STRING_DESC( mfrDesc[], MFR_STRING );
-UTF16LE_PACKED_STATIC_CONST_STRING_DESC( prodDesc[], PROD_STRING );
-UTF16LE_PACKED_STATIC_CONST_STRING_DESC( serDesc[], SER_STRING );
-UTF16LE_PACKED_STATIC_CONST_STRING_DESC( int0Desc[], INT0_STRING );
+UTF16LE_PACKED_STATIC_CONST_STRING_DESC( mfrDesc[], MFR_STRING, 9 );
+UTF16LE_PACKED_STATIC_CONST_STRING_DESC( prodDesc[], PROD_STRING, 18 );
+UTF16LE_PACKED_STATIC_CONST_STRING_DESC( serDesc[], SER_STRING, 17 );
+UTF16LE_PACKED_STATIC_CONST_STRING_DESC( int0Desc[], INT0_STRING, 18 );
 
 //-----------------------------------------------------------------------------
 SI_SEGMENT_POINTER(myUsbStringTable_USEnglish[],
 		static const USB_StringDescriptor_TypeDef,
-		const SI_SEG_CODE) =
+		const SI_SEG_XDATA) =
 {
 	langDesc,
 	mfrDesc,
@@ -153,7 +164,7 @@ SI_SEGMENT_POINTER(myUsbStringTable_USEnglish[],
 //-----------------------------------------------------------------------------
 SI_SEGMENT_VARIABLE(initstruct,
 		const USBD_Init_TypeDef,
-		SI_SEG_CODE) =
+		SI_SEG_XDATA) =
 {
 	deviceDesc,                                         // deviceDescriptor
 	configDesc,// configDescriptor

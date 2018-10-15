@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,19 +24,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-#include <SI_EFM8UB1_Register_Enums.h>
+#include <SI_EFM8UB3_Register_Enums.h>
 #include <efm8_usb.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include "app.h"
 #include "bsp.h"
+#include "gpio.h"
 
 
 void u2f_delay(uint32_t ms) {
 	uint32_t ms_now = get_ms();
 	while((get_ms() - ms_now) < ms)
 	{
+		// make sure at least 1ms pass between watchdog calls (better time resolution is not required)
+		// see Errata, https://www.silabs.com/documents/public/errata/EFM8UB1-Errata.pdf
+		// 2.2 WDT_E101 – Restrictions on Watchdog Timer Refresh Interval
+		while((get_ms() - ms_now) <= 1)
+			;
 		watchdog();
+		led_blink_manager();
 	}
 }
 

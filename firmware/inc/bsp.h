@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +28,7 @@
 #ifndef BSP_H_
 #define BSP_H_
 
-#include <SI_EFM8UB1_Register_Enums.h>
+#include <SI_EFM8UB3_Register_Enums.h>
 #include <efm8_usb.h>
 #include <stdint.h>
 #include "descriptors.h"
@@ -40,6 +41,12 @@ SI_SBIT(U2F_BUTTON,       SFR_P0, 1);
 SI_SBIT(U2F_LED,          SFR_P0, 6);
 SI_SBIT(U2F_BUTTON_RESET, SFR_P0, 7);
 
+/*
+ * U2F_BUTTON_RESET is a MTPM pin. Requires HIGH state to keep
+ * NORMAL power mode on MTCH101
+ * */
+
+
 #define IS_BUTTON_PRESSED()      (U2F_BUTTON == 0)
 #define LED_ON()                 { U2F_LED = 0; }
 #define LED_OFF()                { U2F_LED = 1; }
@@ -47,7 +54,11 @@ SI_SBIT(U2F_BUTTON_RESET, SFR_P0, 7);
 #define BUTTON_RESET_OFF()       { U2F_BUTTON_RESET = 1; }
 #define IS_LED_ON()              (U2F_LED == 0)
 #define GetEp(epAddr)            (&myUsbDevice.ep0 + epAddr)
+#ifndef DISABLE_WATCHDOG
 #define watchdog()	             (WDTCN = 0xA5)
+#else
+#define watchdog()
+#endif
 #define reboot()	             (RSTSRC = 1 << 4)
 #define get_ms()                  _MS_
 
@@ -74,9 +85,9 @@ void usb_write  (uint8_t* buf, uint8_t len);
 
 #else
 
-	#define u2f_printx(x)
-	#define u2f_printb(x)
-	#define u2f_printlx(x)
+	#define u2f_printx(x, y, z)
+	#define u2f_printb(x, y, z)
+	#define u2f_printlx(x, y, z, zz)
 	#define u2f_printl(x)
 	#define u2f_printd(x)
 	#define u2f_prints(x)
@@ -87,7 +98,7 @@ void usb_write  (uint8_t* buf, uint8_t len);
 	#define u2f_putlx(x)
 
 	#define putf(x)
-	#define dump_hex(x)
+	#define dump_hex(x, y)
 
 #endif
 

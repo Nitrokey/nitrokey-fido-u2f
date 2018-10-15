@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,21 +24,47 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-#include <SI_EFM8UB1_Register_Enums.h>
+#include <SI_EFM8UB3_Register_Enums.h>
 #include <stdint.h>
 
 #include "eeprom.h"
+#include "bsp.h"
+
+//See EFM8UB1 Reference Manual, 4.3.1 Security Options
+#define SECURITY_BYTE_POSITION 	(0xFBFF)
+#define SECURITY_BYTE_UNSET 	(0xFF)
+#define SECURITY_BYTE_PAGE	 	(0xFBC0)
+
+//number of pages has to be 1's complement
+#define LOCK_FIRST_N_PAGES(x) 	(0xFF^(x))
+//page has 512 bytes
+#define LOCK_FIRST_N_KBYTES(x) 	(LOCK_FIRST_N_PAGES( (x)*2 ))
 
 void eeprom_init()
 {
 	uint8_t secbyte;
-	eeprom_read(0xFBFF,&secbyte,1);
-	if (secbyte == 0xff)
+	eeprom_read(SECURITY_BYTE_POSITION,&secbyte,1);
+	if (secbyte == SECURITY_BYTE_UNSET)
 	{
-		eeprom_erase(0xFBC0);
-		secbyte = -32;
-		eeprom_write(0xFBFF, &secbyte, 1);
+		eeprom_erase(SECURITY_BYTE_PAGE);
+		secbyte = LOCK_FIRST_N_KBYTES(40);
+		eeprom_write(SECURITY_BYTE_POSITION, &secbyte, 1);
 	}
+}
+
+void eeprom_xor(uint16_t addr, uint8_t * out_buf, uint8_t len){
+	uint8_t code * eepaddr =  (uint8_t code *) addr;
+	bit old_int;
+
+	watchdog();
+	while(len--)
+	{
+		old_int = IE_EA;
+		IE_EA = 0;
+		*out_buf++ ^= *eepaddr++;
+		IE_EA = old_int;
+	}
+	watchdog();
 }
 
 void eeprom_read(uint16_t addr, uint8_t * buf, uint8_t len)
@@ -45,6 +72,7 @@ void eeprom_read(uint16_t addr, uint8_t * buf, uint8_t len)
 	uint8_t code * eepaddr =  (uint8_t code *) addr;
 	bit old_int;
 
+	watchdog();
 	while(len--)
 	{
 		old_int = IE_EA;
@@ -52,6 +80,7 @@ void eeprom_read(uint16_t addr, uint8_t * buf, uint8_t len)
 		*buf++ = *eepaddr++;
 		IE_EA = old_int;
 	}
+	watchdog();
 }
 
 void _eeprom_write(uint16_t addr, uint8_t * buf, uint8_t len, uint8_t flags)

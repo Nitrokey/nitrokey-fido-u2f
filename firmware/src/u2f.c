@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +54,7 @@ void u2f_request(struct u2f_request_apdu * req)
 
     if (req->cla != 0)
     {
-    	u2f_hid_set_len(2);
+    	u2f_hid_set_len(U2F_SW_LENGTH);
     	*rcode = U2F_SW_CLASS_NOT_SUPPORTED;
     	goto end;
     }
@@ -63,7 +64,7 @@ void u2f_request(struct u2f_request_apdu * req)
         case U2F_REGISTER:
         	if (len != 64)
         	{
-            	u2f_hid_set_len(2);
+            	u2f_hid_set_len(U2F_SW_LENGTH);
             	*rcode = U2F_SW_WRONG_LENGTH;
         	}
         	else
@@ -77,7 +78,7 @@ void u2f_request(struct u2f_request_apdu * req)
         case U2F_VERSION:
         	if (len)
         	{
-            	u2f_hid_set_len(2);
+            	u2f_hid_set_len(U2F_SW_LENGTH);
             	*rcode = U2F_SW_WRONG_LENGTH;
         	}
         	else
@@ -90,13 +91,13 @@ void u2f_request(struct u2f_request_apdu * req)
         	*rcode = U2F_SW_NO_ERROR;
         	break;
         default:
-        	u2f_hid_set_len(2);
+        	u2f_hid_set_len(U2F_SW_LENGTH);
         	*rcode = U2F_SW_INS_NOT_SUPPORTED;
         	break;
     }
 
     end:
-    u2f_response_writeback((uint8_t*)rcode,2);
+    u2f_response_writeback((uint8_t*)rcode,U2F_SW_LENGTH);
     u2f_response_flush();
 }
 
@@ -139,14 +140,13 @@ static void dump_signature_der(uint8_t * sig)
 
 static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t control)
 {
-
-	uint8_t up = 1;
-	uint32_t count;
+	uint8_t users_presence_flag = 1;
+	uint32_t counter;
 
 	if (control == U2F_AUTHENTICATE_CHECK)
 	{
-		u2f_hid_set_len(2);
-		if (u2f_appid_eq(req->kh, req->app) == 0)
+		u2f_hid_set_len(U2F_SW_LENGTH);
+		if (u2f_appid_eq(req->key_handle, req->application) == 0)
 		{
 			return U2F_SW_CONDITIONS_NOT_SATISFIED;
 		}
@@ -155,15 +155,19 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 			return U2F_SW_WRONG_DATA;
 		}
 	}
+
+	if(req->key_handle_length != U2F_KEY_HANDLE_SIZE){
+		u2f_hid_set_len(U2F_SW_LENGTH);
+		return U2F_SW_WRONG_LENGTH;
+	}
+
 	if 	(
 			control != U2F_AUTHENTICATE_SIGN ||
-			req->khl != U2F_KEY_HANDLE_SIZE  ||
-			u2f_appid_eq(req->kh, req->app) != 0 ||		// Order of checks is important
-			u2f_load_key(req->kh, req->app) != 0
-
+			u2f_appid_eq(req->key_handle, req->application) != 0 ||		// Order of checks is important
+			u2f_load_key(req->key_handle, req->application) != 0
 		)
 	{
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_WRONG_PAYLOAD;
 	}
 
@@ -171,29 +175,30 @@ static int16_t u2f_authenticate(struct u2f_authenticate_request * req, uint8_t c
 
 	if (u2f_get_user_feedback())
 	{
-		u2f_hid_set_len(2);
+		u2f_hid_set_len(U2F_SW_LENGTH);
 		return U2F_SW_CONDITIONS_NOT_SATISFIED;
 	}
 
-	count = u2f_count();
+	counter = u2f_count();
 
-    u2f_sha256_start();
-    u2f_sha256_update(req->app,32);
-    u2f_sha256_update(&up,1);
-    u2f_sha256_update((uint8_t *)&count,4);
-    u2f_sha256_update(req->chal,32);
+    u2f_sha256_start_default();
+    u2f_sha256_update(req->application,sizeof(req->application));
+    u2f_sha256_update(&users_presence_flag,1);
+    u2f_sha256_update((uint8_t *)&counter,4);
+    u2f_sha256_update(req->challenge,sizeof(req->challenge));
 
     u2f_sha256_finish();
 
-    if (u2f_ecdsa_sign((uint8_t*)req, req->kh, req->app) == -1)
+    if (u2f_ecdsa_sign((uint8_t*)req, req->key_handle, req->application) == -1)
 	{
-    	return U2F_SW_WRONG_DATA+0x20;
+    	return U2F_SW_OPERATION_FAILED; //FIXME custom error code - change to any from spec?
 	}
 
-    u2f_hid_set_len(7 + get_signature_length((uint8_t*)req));
+    u2f_hid_set_len(U2F_SW_LENGTH + 1 + 4
+    		+ get_signature_length((uint8_t*)req));
 
-    u2f_response_writeback(&up,1);
-    u2f_response_writeback((uint8_t *)&count,4);
+    u2f_response_writeback(&users_presence_flag,1);
+    u2f_response_writeback((uint8_t *)&counter,4);
     dump_signature_der((uint8_t*)req);
 
 	return U2F_SW_NO_ERROR;
@@ -204,51 +209,53 @@ static int16_t u2f_register(struct u2f_register_request * req)
     uint8_t i[] = {0x0,U2F_EC_FMT_UNCOMPRESSED};
 
     uint8_t key_handle[U2F_KEY_HANDLE_SIZE];
-    uint8_t pubkey[64];
-
+    uint8_t pubkey[U2F_EC_PUBKEY_RAW_SIZE];
+    int8_t status_code = 0;
 
     const uint16_t attest_size = u2f_attestation_cert_size();
 
     if (u2f_get_user_feedback())
     {
-    	u2f_hid_set_len(2);
+    	u2f_hid_set_len(U2F_SW_LENGTH);
         return U2F_SW_CONDITIONS_NOT_SATISFIED;
     }
 
-    if ( u2f_new_keypair(key_handle, req->app, pubkey) == -1)
+    status_code = u2f_new_keypair(key_handle, req->application, pubkey);
+	if (status_code != 0)
     {
-    	u2f_hid_set_len(2);
-    	return U2F_SW_INSUFFICIENT_MEMORY;
+		u2f_hid_set_len(U2F_SW_LENGTH);
+    	return U2F_SW_INSUFFICIENT_MEMORY+status_code; //FIXME non-standard SW
     }
 
-    u2f_sha256_start();
-    u2f_sha256_update(i,1);
-    u2f_sha256_update(req->app,32);
-
-    u2f_sha256_update(req->chal,32);
-
-    u2f_sha256_update(key_handle,U2F_KEY_HANDLE_SIZE);
-    u2f_sha256_update(i+1,1);
-    u2f_sha256_update(pubkey,64);
+    u2f_sha256_start_default();
+    u2f_sha256_update(i,1); // 0
+    u2f_sha256_update(req->application,sizeof(req->application));
+    u2f_sha256_update(req->challenge,sizeof(req->challenge));
+    u2f_sha256_update(key_handle,sizeof(key_handle));
+    u2f_sha256_update(i+1,1); // U2F_EC_FMT_UNCOMPRESSED
+    u2f_sha256_update(pubkey,sizeof(pubkey));
     u2f_sha256_finish();
     
-    if (u2f_ecdsa_sign((uint8_t*)req, U2F_ATTESTATION_HANDLE, req->app) == -1)
+    if (u2f_ecdsa_sign((uint8_t*)req, U2F_ATTESTATION_HANDLE, req->application) == -1)
 	{
     	return U2F_SW_WRONG_DATA;
 	}
 
-    u2f_hid_set_len(69 + get_signature_length((uint8_t*)req) + U2F_KEY_HANDLE_SIZE + u2f_attestation_cert_size());
-    i[0] = 0x5;
+    u2f_hid_set_len(2 + 1
+    		+ U2F_SW_LENGTH
+    		+ sizeof(pubkey)
+    		+ get_signature_length((uint8_t*)req)
+    		+ U2F_KEY_HANDLE_SIZE
+    		+ u2f_attestation_cert_size());
+    i[0] = U2F_REGISTER_RESERVED_BYTE;
     u2f_response_writeback(i,2);
-    u2f_response_writeback(pubkey,64);
+    u2f_response_writeback(pubkey,sizeof(pubkey));
     i[0] = U2F_KEY_HANDLE_SIZE;
     u2f_response_writeback(i,1);
     u2f_response_writeback(key_handle,U2F_KEY_HANDLE_SIZE);
-
     u2f_response_writeback(u2f_get_attestation_cert(),u2f_attestation_cert_size());
 
     dump_signature_der((uint8_t*)req);
-
 
     return U2F_SW_NO_ERROR;
 }
@@ -256,7 +263,7 @@ static int16_t u2f_register(struct u2f_register_request * req)
 static int16_t u2f_version()
 {
 	code const char version[] = "U2F_V2";
-	u2f_hid_set_len(2 + sizeof(version)-1);
+	u2f_hid_set_len(U2F_SW_LENGTH + sizeof(version)-1);
 	u2f_response_writeback(version, sizeof(version)-1);
 	return U2F_SW_NO_ERROR;
 }

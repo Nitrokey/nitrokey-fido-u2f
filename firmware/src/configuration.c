@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2016, Conor Patrick
  * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
@@ -25,22 +24,17 @@
 
  */
 
-#ifndef CUSTOM_H_
-#define CUSTOM_H_
+#include "configuration.h"
+#include "eeprom.h"
 
-#include "app.h"
-#include "u2f_hid.h"
+Configuration configuration;
 
-#define U2F_CUSTOM_GET_RNG		(U2FHID_VENDOR_FIRST+0)
-#define U2F_CUSTOM_SEED_RNG		(U2FHID_VENDOR_FIRST+1)
-#define U2F_CUSTOM_WINK			(U2FHID_VENDOR_FIRST+2)
-#define U2F_CUSTOM_FACTORY_RESET		(U2FHID_VENDOR_FIRST+3)
-#define U2F_CUSTOM_UPDATE_CONFIG		(U2FHID_VENDOR_FIRST+4)
-#define U2F_CUSTOM_STATUS		(U2FHID_VENDOR_FIRST+5)
+void configuration_write(){
+	eeprom_erase(EEPROM_DATA_CONFIG);
+	eeprom_write(EEPROM_DATA_CONFIG, (uint8_t*)&configuration, sizeof(configuration));
+}
 
-
-
-uint8_t custom_command(struct u2f_hid_msg * msg);
-
-
-#endif
+Configuration * configuration_read(){
+	eeprom_read(EEPROM_DATA_CONFIG, (uint8_t*)&configuration, sizeof(configuration));
+	return &configuration;
+}

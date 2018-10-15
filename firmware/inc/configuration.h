@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2016, Conor Patrick
  * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
@@ -25,22 +24,25 @@
 
  */
 
-#ifndef CUSTOM_H_
-#define CUSTOM_H_
+#ifndef INC_CONFIGURATION_H_
+#define INC_CONFIGURATION_H_
 
-#include "app.h"
-#include "u2f_hid.h"
+#include <stdint.h>
 
-#define U2F_CUSTOM_GET_RNG		(U2FHID_VENDOR_FIRST+0)
-#define U2F_CUSTOM_SEED_RNG		(U2FHID_VENDOR_FIRST+1)
-#define U2F_CUSTOM_WINK			(U2FHID_VENDOR_FIRST+2)
-#define U2F_CUSTOM_FACTORY_RESET		(U2FHID_VENDOR_FIRST+3)
-#define U2F_CUSTOM_UPDATE_CONFIG		(U2FHID_VENDOR_FIRST+4)
-#define U2F_CUSTOM_STATUS		(U2FHID_VENDOR_FIRST+5)
+typedef struct {
+	uint8_t show_serial_on_USB;
+}
+Configuration;
 
+extern Configuration configuration;
 
+void configuration_write();
+Configuration * configuration_read();
 
-uint8_t custom_command(struct u2f_hid_msg * msg);
+typedef enum {
+	CONFIG_FALSE 	= 0x00,
+	CONFIG_TRUE 	= 0x01,
+	CONFIG_NOT_SET 	= 0xFF
+} ConfigValue;
 
-
-#endif
+#endif /* INC_CONFIGURATION_H_ */

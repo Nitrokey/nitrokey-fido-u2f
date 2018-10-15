@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,15 +33,96 @@
 #include <stdint.h>
 #include "custom.h"
 #include "bsp.h"
+#include "gpio.h"
 #include "atecc508a.h"
+#include "eeprom.h"
+#include "u2f.h"
+#include "configuration.h"
+
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
 	struct atecc_response res;
 	uint8_t ec;
+	uint8_t *out = msg->pkt.init.payload;
 
 	switch(msg->pkt.init.cmd)
 	{
+		case U2F_CUSTOM_STATUS:
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+			out[0] = IS_BUTTON_PRESSED();
+			out[1] = button_get_press_state();
+			out[2] = last_button_cleared_time_delta();
+			out[3] = last_button_pushed_time_delta();
+			out[4] = led_is_blinking();
+			out[5] = U2F_MS_CLEAR_BUTTON_PERIOD / 100;
+			out[6] = U2F_MS_INIT_BUTTON_PERIOD / 100;
+
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			break;
+
+		case U2F_CUSTOM_UPDATE_CONFIG:
+			if(u2f_get_user_feedback_extended_wipe()){
+				memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+				out[0] = 0;
+				U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+				usb_write((uint8_t*)msg, 64);
+				break;
+			}
+
+			eeprom_erase(EEPROM_DATA_CONFIG);
+			eeprom_write(EEPROM_DATA_CONFIG, msg->pkt.init.payload, sizeof(Configuration));
+			configuration_read();
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+#ifndef _PRODUCTION_RELEASE
+			eeprom_read(EEPROM_DATA_CONFIG, out+2, sizeof(Configuration));
+#endif
+			out[0] = 1;
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			u2f_delay(100);
+			RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
+		break;
+
+#ifdef FEAT_FACTORY_RESET
+		case U2F_CUSTOM_FACTORY_RESET:
+			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
+
+			if(u2f_get_user_feedback_extended_wipe()){
+				U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+				usb_write((uint8_t*)msg, 64);
+				break;
+			}
+
+			// clear device key explicitly
+			memset(device_configuration.RMASK, 0, sizeof(device_configuration.RMASK));
+			memset(device_configuration.WMASK, 0, sizeof(device_configuration.WMASK));
+			eeprom_erase(EEPROM_DATA_WMASK);
+			eeprom_erase(EEPROM_DATA_RMASK);
+			eeprom_erase(EEPROM_DATA_U2F_CONST);
+			eeprom_erase(EEPROM_DATA_CONFIG);
+
+#ifndef _PRODUCTION_RELEASE
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8+8+8, 4);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8+8+4, 4);
+#endif //#ifndef _PRODUCTION_RELEASE
+			out[0] = generate_WMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[1] = generate_RMASK(appdata.tmp, sizeof(appdata.tmp));
+			out[2] = generate_device_key(NULL, appdata.tmp, sizeof(appdata.tmp));
+#ifndef _PRODUCTION_RELEASE
+			memmove(out+3, device_configuration.WMASK, 8);
+			memmove(out+3+8, device_configuration.RMASK, 8);
+			eeprom_read(EEPROM_DATA_U2F_CONST, out+3+8+8, 8);
+			eeprom_read(EEPROM_DATA_WMASK, out+3+8+8+8, 8);
+			eeprom_read(EEPROM_DATA_RMASK, out+3+8+8+8+8, 8);
+#endif //#ifndef _PRODUCTION_RELEASE
+
+			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
+			usb_write((uint8_t*)msg, 64);
+			break;
+#endif // #ifdef FEAT_FACTORY_RESET
+
 #ifdef U2F_SUPPORT_RNG_CUSTOM
 		case U2F_CUSTOM_GET_RNG:
 			if (atecc_send_recv(ATECC_CMD_RNG,ATECC_RNG_P1,ATECC_RNG_P2,
@@ -59,7 +141,7 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			}
 
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_RNG_CUSTOM
 #ifdef U2F_SUPPORT_SEED_CUSTOM
 		case U2F_CUSTOM_SEED_RNG:
 			ec = atecc_send_recv(ATECC_CMD_NONCE,ATECC_NONCE_RNG_UPDATE,0,
@@ -70,37 +152,13 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			msg->pkt.init.payload[0] = ec == 0 ? 1 : 0;
 			usb_write((uint8_t*)msg, 64);
 			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_SEED_CUSTOM
 #ifdef U2F_SUPPORT_WINK
 		case U2F_CUSTOM_WINK:
-			LedBlink(5, 300);
+			if(led_is_blinking() == false)
+				led_blink(5, LED_BLINK_PERIOD);
 			break;
-#endif
-#ifdef U2F_USING_BOOTLOADER
-		case U2F_CONFIG_BOOTLOADER:
-
-			atecc_send_recv(ATECC_CMD_READ,
-					ATECC_RW_DATA, ATECC_EEPROM_DATA_SLOT(8), NULL, 0,
-					appdata.tmp, sizeof(appdata.tmp), &res);
-
-			if (res.buf[0] == 0xff)
-			{
-				*((uint8_t SI_SEG_DATA *)0x00) = 0xA5;
-				RSTSRC = RSTSRC_SWRSF__SET | RSTSRC_PORSF__SET;
-			}
-
-
-			break;
-		case U2F_CONFIG_BOOTLOADER_DESTROY:
-
-			memset(appdata.tmp,0,4);
-
-			atecc_send_recv(ATECC_CMD_WRITE,
-					ATECC_RW_DATA, ATECC_EEPROM_DATA_SLOT(8), appdata.tmp, 4,
-					appdata.tmp, sizeof(appdata.tmp), &res);
-
-			break;
-#endif
+#endif //#ifdef U2F_SUPPORT_WINK
 		default:
 			return 0;
 	}

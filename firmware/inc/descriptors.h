@@ -25,8 +25,10 @@
 extern "C" {
 #endif
 
+extern uint8_t dynamic_serial[2*17];
+
 // $[Vendor ID]
-#define USB_VENDOR_ID                      htole16(0x20A0)
+#define USB_VENDOR_ID                      htole16(0x20a0)
 // [Vendor ID]$
 
 // $[Product ID]
@@ -45,7 +47,7 @@ extern SI_SEGMENT_VARIABLE(ReportDescriptor0[0], const uint8_t, SI_SEG_CODE);
 
 extern SI_SEGMENT_VARIABLE(deviceDesc[], const USB_DeviceDescriptor_TypeDef, SI_SEG_CODE);
 extern SI_SEGMENT_VARIABLE(configDesc[], const uint8_t, SI_SEG_CODE);
-extern SI_SEGMENT_VARIABLE(initstruct, const USBD_Init_TypeDef, SI_SEG_CODE);
+extern SI_SEGMENT_VARIABLE(initstruct, const USBD_Init_TypeDef, SI_SEG_XDATA);
 
 #ifdef __cplusplus
 }

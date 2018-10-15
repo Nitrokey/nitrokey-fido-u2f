@@ -67,10 +67,10 @@
 // $[Endpoint Max Packet Size]
 #define SLAB_USB_EP1IN_MAX_PACKET_SIZE         64
 #define SLAB_USB_EP1OUT_MAX_PACKET_SIZE        64
-#define SLAB_USB_EP2IN_MAX_PACKET_SIZE         64
-#define SLAB_USB_EP2OUT_MAX_PACKET_SIZE        64
-#define SLAB_USB_EP3IN_MAX_PACKET_SIZE         64
-#define SLAB_USB_EP3OUT_MAX_PACKET_SIZE        64
+#define SLAB_USB_EP2IN_MAX_PACKET_SIZE         1
+#define SLAB_USB_EP2OUT_MAX_PACKET_SIZE        1
+#define SLAB_USB_EP3IN_MAX_PACKET_SIZE         1
+#define SLAB_USB_EP3OUT_MAX_PACKET_SIZE        1
 // [Endpoint Max Packet Size]$
 
 // -----------------------------------------------------------------------------
@@ -130,7 +130,7 @@
 // 
 // -----------------------------------------------------------------------------
 // $[Power Save Mode]
-#define SLAB_USB_PWRSAVE_MODE                  ( USB_PWRSAVE_MODE_OFF )
+#define SLAB_USB_PWRSAVE_MODE                  USB_PWRSAVE_MODE_OFF
 // [Power Save Mode]$
 
 // -----------------------------------------------------------------------------

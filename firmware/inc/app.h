@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Conor Patrick
+ * Copyright (c) 2018, Nitrokey UG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,34 +28,49 @@
 #ifndef APP_H_
 #define APP_H_
 
-#include <SI_EFM8UB1_Register_Enums.h>
+#include <SI_EFM8UB3_Register_Enums.h>
 #include <stdarg.h>
 #include "u2f_hid.h"
 
 
 // hw settings
 #define BUTTON_MIN_PRESS_T_MS    750
+#define BUTTON_MIN_PRESS_T_MS_EXT    (10*1000)
+#define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
-#define LED_BLINK_T_ON           100                                 // ms
-#define LED_BLINK_T_OFF          (LedBlinkPeriodT - LED_BLINK_T_ON)  // ms
+#define LED_BLINK_T_ON           (LED_BLINK_PERIOD/2)                                 // ms
+#define LED_BLINK_T_OFF          (led_blink_period_t - LED_BLINK_T_ON)  // ms
+#define LED_BLINK_PERIOD         (780)                                 // ms
 #define LED_BLINK_NUM_INF        255
 
 // application settings
 #define U2F_ATTESTATION_KEY_SLOT	15
 #define U2F_MASTER_KEY_SLOT			1
 #define U2F_TEMP_KEY_SLOT			2
+#define U2F_WKEY_KEY_SLOT			1
+#define U2F_DEVICE_KEY_SLOT			5
 
-// Comment these out to fit firmware with a bootloader.
+// this a BCD, e.g. version 12.34 -> 0x1234
+#define NK_FIRMWARE_VERSION			0x0100
+
 #define U2F_SUPPORT_WINK
 #define U2F_SUPPORT_HID_LOCK
 #define U2F_SUPPORT_RNG_CUSTOM
 #define U2F_SUPPORT_SEED_CUSTOM
 
-// comment out this if using bootloader
-//#define U2F_USING_BOOTLOADER
+#define SHOW_TOUCH_REGISTERED
 
-// Uncomment this to make configuration firmware
-//#define ATECC_SETUP_DEVICE
+//#define DISABLE_WATCHDOG
+//#define FAKE_TOUCH
+//#define DEBUG_GATHER_ATECC_ERRORS
+
+#define FEAT_FACTORY_RESET
+
+// Uncomment this to make configuration firmware (stage 1 firmware)
+#define ATECC_SETUP_DEVICE
+
+// Uncomment to make a production firmware release, with selected flags
+//#define _PRODUCTION_RELEASE
 
 // Touch button test function
 //#define __BUTTON_TEST__                             // Button drives directly the LED. Minimal required press time is determined by BUTTON_MIN_PRESS_T_MS
@@ -62,26 +78,23 @@
 //#define U2F_PRINT
 //#define U2F_BLINK_ERRORS
 
-// efm8ub1 application eeprom memory mappings
-#define U2F_KEY_HEADER_ADDR		0xF800
-#define U2F_EEPROM_CONFIG		(U2F_KEY_HEADER_ADDR + 128)
-#define U2F_EEPROM_APP_IDS		(U2F_EEPROM_CONFIG + 64)
-
-#if ((U2F_ATTESTATION_KEY_SLOT * 32) > 768)
-#error "not enough eeprom"
+#ifdef _PRODUCTION_RELEASE
+	#undef DEBUG_GATHER_ATECC_ERRORS
+	#undef FAKE_TOUCH
+	#undef SHOW_TOUCH_REGISTERED
+	#undef DISABLE_WATCHDOG
+	#undef U2F_PRINT
+	#undef U2F_BLINK_ERRORS
+	#undef __BUTTON_TEST__
+	#undef U2F_USING_BOOTLOADER
+	#ifndef FEAT_FACTORY_RESET
+		#define FEAT_FACTORY_RESET
+	#endif
+	#ifndef ATECC_SETUP_DEVICE
+		#define _SECURE_EEPROM
+	#endif
 #endif
 
-//								{blue(0), green(0x5a), red(0)}
-#define U2F_DEFAULT_BRIGHTNESS					90
-#define U2F_COLOR 								0x001300
-#define U2F_DEFAULT_COLOR_PRIME 				0x130000
-#define U2F_DEFAULT_COLOR_ERROR 				0x000038
-#define U2F_DEFAULT_COLOR_INPUT 				0x000603
-#define U2F_DEFAULT_COLOR_INPUT_SUCCESS			0x251200
-#define U2F_COLOR_WINK 							0x120000
-#define U2F_DEFAULT_COLOR_WINK_OUT_OF_SPACE 	0x030312
-
-#define U2F_DEFAULT_COLOR_PERIOD				20
 
 typedef enum
 {
@@ -128,12 +141,18 @@ struct APP_DATA
 #define	U2F_CONFIG_IS_BUILD				0x81
 #define U2F_CONFIG_IS_CONFIGURED		0x82
 #define U2F_CONFIG_LOCK					0x83
-#define U2F_CONFIG_GENKEY				0x84
+//#define U2F_CONFIG_GENKEY				0x84
 #define U2F_CONFIG_LOAD_TRANS_KEY		0x85
 #define U2F_CONFIG_LOAD_WRITE_KEY		0x86
 #define U2F_CONFIG_LOAD_ATTEST_KEY		0x87
 #define U2F_CONFIG_BOOTLOADER			0x88
 #define U2F_CONFIG_BOOTLOADER_DESTROY	0x89
+#define U2F_CONFIG_ATECC_PASSTHROUGH	0x8a
+#define U2F_CONFIG_LOAD_RMASK_KEY		0x8b
+#define U2F_CONFIG_GEN_DEVICE_KEY		0x8c
+#define U2F_CONFIG_GET_SLOTS_FINGERPRINTS	0x8d
+#define U2F_CONFIG_TEST_CONFIG			0x8e
+#define U2F_CONFIG_GET_CONSTANTS		0x8f
 
 struct config_msg
 {
@@ -143,8 +162,6 @@ struct config_msg
 
 extern uint8_t hidmsgbuf[64];
 extern data struct APP_DATA appdata;
-extern code uint8_t WMASK[];
-extern code uint8_t RMASK[];
 
 void set_app_u2f_hid_msg(struct u2f_hid_msg * msg );
 
@@ -156,15 +173,6 @@ uint8_t get_app_state();
 
 void set_app_state(APP_STATE s);
 
-void     LedOn           (void);
-void     LedOff          (void);
-void     LedBlink        (uint8_t blink_num, uint16_t period_t);
-void     TaskLedBlink    (void);
-void     TaskButton      (void);
-uint8_t  IsButtonPressed (void);
-
-// should be called after initializing eeprom
-void u2f_init();
 
 
 #ifdef ATECC_SETUP_DEVICE
@@ -172,26 +180,22 @@ void u2f_init();
 #include "atecc508a.h"
 
 void atecc_setup_device(struct config_msg * msg);
-void atecc_setup_init(uint8_t * buf);
+
 
 void u2f_config_request();
 
 #define U2F_HID_DISABLE
 #define U2F_DISABLE
-#define u2f_init(x)
 #define u2f_hid_init(x)
 #define u2f_hid_request(x)	atecc_setup_device((struct config_msg*)x)
 #define u2f_hid_set_len(x)
 #define u2f_hid_flush(x)
 #define u2f_hid_writeback(x)
 #define u2f_hid_check_timeouts(x)
-#define u2f_wipe_keys(x)	1
 
 #else
 
-int8_t u2f_wipe_keys();
 #define atecc_setup_device(x)
-#define atecc_setup_init(x)
 #endif
 
 

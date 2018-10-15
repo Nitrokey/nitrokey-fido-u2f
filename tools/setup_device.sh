@@ -11,6 +11,7 @@ if [[ $# != "2" ]] && [[ $# != "6" ]]
 then
 
     echo "usage: $0 <attestation-private-key> <attestation-public-key.der> [debugger-SN new-SN-for-U2F-token setup-hex-file setup-SN]"
+    echo "eg.: $0 gencert/ca/key.pem gencert/ca/cert.der"
     exit 1
 
 fi
