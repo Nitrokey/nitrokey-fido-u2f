@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-extern uint8_t dynamic_serial[2*17];
+extern uint8_t dynamic_serial[2 * 17];
 
 // $[Vendor ID]
 #define USB_VENDOR_ID                      htole16(0x20a0)

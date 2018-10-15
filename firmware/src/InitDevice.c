@@ -31,6 +31,7 @@ void enter_DefaultMode_from_RESET(void) {
 	PORTS_0_enter_DefaultMode_from_RESET();
 	PORTS_1_enter_DefaultMode_from_RESET();
 	PBCFG_0_enter_DefaultMode_from_RESET();
+	ADC_0_enter_DefaultMode_from_RESET();
 	CIP51_0_enter_DefaultMode_from_RESET();
 	CLOCK_0_enter_DefaultMode_from_RESET();
 	TIMER01_0_enter_DefaultMode_from_RESET();
@@ -102,6 +103,19 @@ static void PORTS_0_enter_DefaultMode_from_RESET(void) {
 	// [P0MDOUT - Port 0 Output Mode]$
 
 	// $[P0MDIN - Port 0 Input Mode]
+	/***********************************************************************
+	 - P0.0 pin is configured for digital mode
+	 - P0.1 pin is configured for analog mode
+	 - P0.2 pin is configured for digital mode
+	 - P0.3 pin is configured for digital mode
+	 - P0.4 pin is configured for digital mode
+	 - P0.5 pin is configured for digital mode
+	 - P0.6 pin is configured for digital mode
+	 - P0.7 pin is configured for digital mode
+	 ***********************************************************************/
+	P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__ANALOG | P0MDIN_B2__DIGITAL
+			| P0MDIN_B3__DIGITAL | P0MDIN_B4__DIGITAL | P0MDIN_B5__DIGITAL
+			| P0MDIN_B6__DIGITAL | P0MDIN_B7__DIGITAL;
 	// [P0MDIN - Port 0 Input Mode]$
 
 	// $[P0SKIP - Port 0 Skip]
@@ -582,3 +596,47 @@ extern void PCACH_1_enter_DefaultMode_from_RESET(void) {
 extern void PCACH_2_enter_DefaultMode_from_RESET(void) {
 
 }
+extern void ADC_0_enter_DefaultMode_from_RESET(void) {
+	// $[ADC0CN1 - ADC0 Control 1]
+	// [ADC0CN1 - ADC0 Control 1]$
+
+	// $[ADC0MX - ADC0 Multiplexer Selection]
+	/***********************************************************************
+	 - Select ADC0.1
+	 ***********************************************************************/
+	ADC0MX = ADC0MX_ADC0MX__ADC0P1;
+	// [ADC0MX - ADC0 Multiplexer Selection]$
+
+	// $[ADC0CF - ADC0 Configuration]
+	// [ADC0CF - ADC0 Configuration]$
+
+	// $[ADC0AC - ADC0 Accumulator Configuration]
+	// [ADC0AC - ADC0 Accumulator Configuration]$
+
+	// $[ADC0TK - ADC0 Burst Mode Track Time]
+	// [ADC0TK - ADC0 Burst Mode Track Time]$
+
+	// $[ADC0PWR - ADC0 Power Control]
+	// [ADC0PWR - ADC0 Power Control]$
+
+	// $[ADC0GTH - ADC0 Greater-Than High Byte]
+	// [ADC0GTH - ADC0 Greater-Than High Byte]$
+
+	// $[ADC0GTL - ADC0 Greater-Than Low Byte]
+	// [ADC0GTL - ADC0 Greater-Than Low Byte]$
+
+	// $[ADC0LTH - ADC0 Less-Than High Byte]
+	// [ADC0LTH - ADC0 Less-Than High Byte]$
+
+	// $[ADC0LTL - ADC0 Less-Than Low Byte]
+	// [ADC0LTL - ADC0 Less-Than Low Byte]$
+
+	// $[ADC0CN0 - ADC0 Control 0]
+	/***********************************************************************
+	 - Enable ADC0 
+	 ***********************************************************************/
+	ADC0CN0 |= ADC0CN0_ADEN__ENABLED;
+	// [ADC0CN0 - ADC0 Control 0]$
+
+}
+
