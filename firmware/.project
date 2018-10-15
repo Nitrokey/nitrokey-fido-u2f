@@ -26,9 +26,19 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>lib/efm8ub3/peripheralDrivers/inc/adc_0.h</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/Device/EFM8UB3/peripheral_driver/inc/adc_0.h</locationURI>
+		</link>
+		<link>
 			<name>lib/efm8ub3/peripheralDrivers/inc/usb_0.h</name>
 			<type>1</type>
 			<locationURI>STUDIO_SDK_LOC/Device/EFM8UB3/peripheral_driver/inc/usb_0.h</locationURI>
+		</link>
+		<link>
+			<name>lib/efm8ub3/peripheralDrivers/src/adc_0.c</name>
+			<type>1</type>
+			<locationURI>STUDIO_SDK_LOC/Device/EFM8UB3/peripheral_driver/src/adc_0.c</locationURI>
 		</link>
 		<link>
 			<name>lib/efm8ub3/peripheralDrivers/src/usb_0.c</name>
