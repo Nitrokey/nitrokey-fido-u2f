@@ -46,8 +46,11 @@ SI_SBIT(U2F_BUTTON_RESET, SFR_P0, 7);
  * NORMAL power mode on MTCH101
  * */
 
-
+#ifdef __CVD__
+#define IS_BUTTON_PRESSED()      0
+#else
 #define IS_BUTTON_PRESSED()      (U2F_BUTTON == 0)
+#endif
 #define LED_ON()                 { U2F_LED = 0; }
 #define LED_OFF()                { U2F_LED = 1; }
 #define BUTTON_RESET_ON()        { U2F_BUTTON_RESET = 0; }
