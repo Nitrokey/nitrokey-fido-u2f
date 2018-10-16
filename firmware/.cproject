@@ -37,17 +37,18 @@
 								<option id="com.silabs.ide.si8051.keil.compiler.category.optimization.emphasis.1009890806" name="Emphasis" superClass="com.silabs.ide.si8051.keil.compiler.category.optimization.emphasis" value="com.silabs.ide.si8051.keil.compiler.category.optimization.emphasis.size" valueType="enumerated"/>
 								<option id="com.silabs.ide.si8051.keil.compiler.category.optimization.coloring.1569030790" name="Global register coloring" superClass="com.silabs.ide.si8051.keil.compiler.category.optimization.coloring" value="true" valueType="boolean"/>
 								<option id="com.silabs.ide.si8051.keil.compiler.category.includes.paths.1968864987" name="Include paths (INCDIR(...))" superClass="com.silabs.ide.si8051.keil.compiler.category.includes.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/efm8ub3/peripheralDrivers/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/shared/si8051Base&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/config}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/tests&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usb/inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_assert&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/peripheral_driver/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usbc/lib_kernel/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usbc/lib_usbc_pd/inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_assert&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usb/inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/peripheral_driver/inc&quot;"/>
 								</option>
 								<option id="com.silabs.ide.si8051.keil.compiler.category.general.code.389376290" name="Code size" superClass="com.silabs.ide.si8051.keil.compiler.category.general.code" value="com.silabs.ide.si8051.keil.compiler.category.general.code.large" valueType="enumerated"/>
 								<option id="com.silabs.ide.si8051.keil.compiler.category.misc.extraflags.762226691" name="Additional Flags" superClass="com.silabs.ide.si8051.keil.compiler.category.misc.extraflags" value="OA" valueType="string"/>
@@ -58,18 +59,19 @@
 									<listOptionValue builtIn="false" value=""/>
 								</option>
 								<option id="com.silabs.ide.si8051.keil.assembler.category.includes.paths.158046198" name="Include paths (INCDIR(...))" superClass="com.silabs.ide.si8051.keil.assembler.category.includes.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib/efm8ub3/peripheralDrivers/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/shared/si8051Base&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc/config}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/tests&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/tinyprintf&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usb/inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_assert&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/peripheral_driver/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usbc/lib_kernel/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usbc/lib_usbc_pd/inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/tinyprintf&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_assert&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Lib/efm8_usb/inc&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/Device/EFM8UB3/peripheral_driver/inc&quot;"/>
 								</option>
 								<inputType id="com.silabs.ide.si8051.keil.assembler.inputType.1636083418" superClass="com.silabs.ide.si8051.keil.assembler.inputType"/>
 							</tool>
@@ -82,7 +84,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="lib/c8051f320|lib/c8051f326|lib/c8051f340|lib/c8051f380|lib/efm8ub2|lib/efm8ub4|lib/efm8ub1|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="lib/efm8bb3|lib/efm8lb1|lib/efm8bb1|lib/efm8bb2|lib/efm8ub1|lib/efm8ub2|lib/efm8sb1|lib/efm8sb2|lib/c8051f380|lib/c8051f320|lib/c8051f326|lib/c8051f340|lib/efm8ub4|src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
@@ -90,7 +92,7 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
 	</storageModule>
-	<storageModule moduleId="com.silabs.ss.framework.ide.project.core.cpp" project.generation="9" projectCommon.boardIds="brd5000a" projectCommon.buildArtifactType="EXE" projectCommon.partId="mcu.8051.efm8.ub1.efm8ub10f16g-b-qfn20" projectCommon.sdkId="com.silabs.sdk.8051:4.1.1._-963069327"/>
+	<storageModule moduleId="com.silabs.ss.framework.ide.project.core.cpp" project.generation="1" projectCommon.boardIds="brd5000a" projectCommon.buildArtifactType="EXE" projectCommon.partId="mcu.8051.efm8.ub1.efm8ub10f16g-b-qfn20" projectCommon.sdkId="com.silabs.sdk.8051:4.1.1._-963069327"/>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="u2f-firmware.com.silabs.ss.framework.ide.project.core.cdt.cdtMbsProjectType.801504117" name="SLS CDT Project" projectType="com.silabs.ss.framework.ide.project.core.cdt.cdtMbsProjectType"/>
 	</storageModule>
