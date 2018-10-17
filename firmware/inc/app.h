@@ -67,6 +67,7 @@
 #define FEAT_FACTORY_RESET
 
 #define __CVD__
+#define __ADC_TEST__
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
 //#define ATECC_SETUP_DEVICE

@@ -44,6 +44,7 @@
 #include "custom.h"
 #include "u2f.h"
 #include "tests.h"
+#include "adc_0.h"
 
 data struct APP_DATA appdata;
 
@@ -89,6 +90,97 @@ void set_app_u2f_hid_msg(struct u2f_hid_msg * msg )
 	state = APP_HID_MSG;
 	hid_msg = msg;
 }
+
+#ifdef __ADC_TEST__
+
+void AdcVref_1p65 (void) {
+	uint8_t SFRPAGE_save = SFRPAGE;
+
+	SFRPAGE = 0x00;
+	REF0CN &= ~REF0CN_IREFLVL__BMASK;
+	SFRPAGE = SFRPAGE_save;
+}
+
+void AdcVref_2p4 (void) {
+	uint8_t SFRPAGE_save = SFRPAGE;
+
+	SFRPAGE = 0x00;
+	REF0CN &= ~REF0CN_IREFLVL__BMASK;
+	REF0CN |= REF0CN_IREFLVL__2P4;
+	SFRPAGE = SFRPAGE_save;
+}
+
+void AdcGain_0p5 (void) {
+	uint8_t SFRPAGE_save = SFRPAGE;
+
+	SFRPAGE = 0x00;
+	ADC0CF &= ~ADC0CF_ADGN__BMASK;
+	SFRPAGE = SFRPAGE_save;
+}
+
+void AdcGain_1 (void) {
+	uint8_t SFRPAGE_save = SFRPAGE;
+
+	SFRPAGE = 0x00;
+	ADC0CF &= ~ADC0CF_ADGN__BMASK;
+	ADC0CF |= ADC0CF_ADGN__GAIN_1;
+	SFRPAGE = SFRPAGE_save;
+}
+
+volatile uint16_t adc1;                               // Uch = 1.8V (LDO), Vref=1.65V, Gain=0.5, should be ~558
+volatile uint16_t adc2;                               // Uch = 1.8V (LDO), Vref=1.65V, Gain=1,   should be 1023
+volatile uint16_t adc3;                               // Uch = 0V (GND),   Vref=1.65V, Gain=0.5, should be ~0                               // Vref=1.65V, Gain=0.5, should be ~558
+volatile uint16_t adc4;                               // Uch = 0V (GND),   Vref=1.65V, Gain=1,   should be ~0
+volatile uint16_t adc5;                               // Uch = 1.8V (LDO), Vref=2.4V,  Gain=0.5, should be ~384
+volatile uint16_t adc6;                               // Uch = 1.8V (LDO), Vref=2.4V,  Gain=1,   should be ~767
+volatile uint16_t adc7;                               // Uch = 0V (GND),   Vref=2.4V,  Gain=0.5, should be ~0
+volatile uint16_t adc8;                               // Uch = 0V (GND),   Vref=2.4V,  Gain=1,   should be ~0
+
+
+uint16_t AdcConv (void) {
+	ADC0_startConversion(); // Start conversion
+	while(!ADC0_isConversionComplete()); // Wait for conversion
+	return ADC0_getResult();
+}
+
+
+void AdcTest (void) {
+   /* formula: adc = ADC_TOP_VALUE * (u_ch * gain) / u_vref */
+
+   /* Vref = 1.65V */
+   AdcVref_1p65();                                     // u_vref = 1.65V
+   ADC0_setPositiveInput(ADC0_POSITIVE_INPUT_LDO_OUT); // u_ch = u_ldo = 1.8V
+
+   AdcGain_0p5();                                      // gain = 0.5
+   adc1 = AdcConv();                                   // adc =~ 558
+   AdcGain_1();                                        // gain = 1
+   adc2 = AdcConv();                                   // adc = 1023
+
+   ADC0_setPositiveInput(ADC0_POSITIVE_INPUT_GND);     // u_ch = u_gnd = 0V
+   AdcGain_0p5();                                      // gain = 0.5
+   adc3 = AdcConv();                                   // adc =~ 0
+   AdcGain_1();                                        // gain = 1
+   adc4 = AdcConv();                                   // adc =~ 0
+
+   /* Vref = 2.4V */
+   AdcVref_2p4();                                      // u_vref = 2.4V
+   ADC0_setPositiveInput(ADC0_POSITIVE_INPUT_LDO_OUT); // u_ch = u_ldo = 1.8V
+
+   AdcGain_0p5();                                      // gain = 0.5
+   adc5 = AdcConv();                                   // adc =~ 384
+   AdcGain_1();                                        // gain = 1
+   adc6 = AdcConv();                                   // adc =~ 767
+
+   ADC0_setPositiveInput(ADC0_POSITIVE_INPUT_GND);
+   AdcGain_0p5();                                      // gain = 0.5
+   adc7 = AdcConv();                                   // adc =~ 0
+   AdcGain_1();                                        // gain = 1
+   adc8 = AdcConv();                                   // adc =~ 0
+}
+
+#else
+#define AdcTest()       ;
+#endif
 
 
 int16_t main(void) {
@@ -136,6 +228,7 @@ int16_t main(void) {
 	while (1) {
 		watchdog();
 
+		AdcTest();
 		clear_button_press();
         button_manager();
         led_blink_manager();
