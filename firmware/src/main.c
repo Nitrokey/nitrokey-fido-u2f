@@ -45,6 +45,9 @@
 #include "u2f.h"
 #include "tests.h"
 #include "adc_0.h"
+#include "cvd_hw.h"
+#include "cvd.h"
+
 
 data struct APP_DATA appdata;
 
@@ -138,8 +141,8 @@ volatile uint16_t adc8;                               // Uch = 0V (GND),   Vref=
 
 
 uint16_t AdcConv (void) {
-	ADC0_startConversion(); // Start conversion
-	while(!ADC0_isConversionComplete()); // Wait for conversion
+	ADC0_startConversion();                           // Start conversion
+	while(!ADC0_isConversionComplete());              // Wait for conversion
 	return ADC0_getResult();
 }
 
@@ -182,7 +185,7 @@ void AdcTest (void) {
 #define AdcTest()       ;
 #endif
 
-
+static uint8_t TriggerCnt = 0;
 int16_t main(void) {
 	data uint8_t xdata * clear = 0;
 	uint16_t i;
@@ -225,10 +228,21 @@ int16_t main(void) {
 
 	led_blink(1, 0);                                   // Blink once after successful startup
 
+	led_blink(100, 500);
 	while (1) {
 		watchdog();
 
-		AdcTest();
+		//AdcTest();
+
+		//if (CvdSample() > CVD_THRESHOLD) { led_on();  }
+		//else                             { led_off(); }
+		if (CvdSample() > CVD_THRESHOLD) {
+			if (TriggerCnt < 255) {
+				TriggerCnt++;
+			}
+		}
+
+
 		clear_button_press();
         button_manager();
         led_blink_manager();

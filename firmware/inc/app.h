@@ -67,6 +67,12 @@
 #define FEAT_FACTORY_RESET
 
 #define __CVD__
+#define CVD_DAC_BIT_NUM          10
+#define CVD_THRESHOLD            251
+
+#define __CVD_HW__
+
+#define __CVD_TEST__
 #define __ADC_TEST__
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
