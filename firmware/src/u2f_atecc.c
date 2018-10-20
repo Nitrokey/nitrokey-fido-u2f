@@ -76,7 +76,9 @@ static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool bl
 	uint8_t user_presence = 0;
 
 	// Accept first request in the first SELF_ACCEPT_MAX_T_MS after power cycle.
-	if (!first_request_accepted && get_ms() < SELF_ACCEPT_MAX_T_MS){
+	// Solution only for a short touch request, not for configuration changes.
+	if (!first_request_accepted && (get_ms() < SELF_ACCEPT_MAX_T_MS)
+			&& (target_button_state == BST_PRESSED_REGISTERED) ){
 		first_request_accepted = true;
 		return 0;
 	}
