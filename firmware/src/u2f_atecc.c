@@ -67,6 +67,8 @@ static bool first_request_accepted = false;
 
 /**
  * Confirm user presence by getting touch button, or device insertion.
+ * Returns: '0' - user presence confirmed, '1' otherwise
+ * FIXME Move to gpio.c
  */
 static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
