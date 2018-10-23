@@ -66,7 +66,7 @@
 
 #define FEAT_FACTORY_RESET
 
-#define __CVD__
+//#define __CVD__
 #define CVD_DAC_BIT_NUM          10
 #define CVD_THRESHOLD            251
 
