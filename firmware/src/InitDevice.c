@@ -113,7 +113,7 @@ static void PORTS_0_enter_DefaultMode_from_RESET(void) {
 	 - P0.6 pin is configured for digital mode
 	 - P0.7 pin is configured for digital mode
 	 ***********************************************************************/
-	P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__ANALOG | P0MDIN_B2__DIGITAL
+	P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__DIGITAL | P0MDIN_B2__DIGITAL
 			| P0MDIN_B3__DIGITAL | P0MDIN_B4__DIGITAL | P0MDIN_B5__DIGITAL
 			| P0MDIN_B6__DIGITAL | P0MDIN_B7__DIGITAL;
 	// [P0MDIN - Port 0 Input Mode]$
