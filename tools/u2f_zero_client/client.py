@@ -33,6 +33,8 @@
 #
 #
 from __future__ import print_function
+
+import struct
 import time, os, sys, array, binascii, signal, random, hashlib
 
 try:
@@ -547,7 +549,16 @@ def do_status(h, wink=True):
             res = h.read(64, 2*1000)
 
         res = res[7:]
-        print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
+        b = res[7:9]
+        b = [chr(c) for c in b]
+        b = ''.join(b)
+        # binascii.b2a_uu()
+        # print (b)
+        button_touch_read, = struct.unpack('>H', b)
+        # print(button_touch_read)
+        # button_touch_read = reduce(lambda x, r: (x << 8) + r, button_touch_read)
+
+        print ('{:03}: {} {} {:02} {:02} {:02} {}'.format(sample_no, res[0], res[1], res[2], res[3], button_touch_read, res[7:9]), end=' ')
         time.sleep(0.1)
         sample_no += 1
         if wink:
