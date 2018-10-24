@@ -45,6 +45,8 @@ static data uint8_t   led_blink_num;                    // Blink number counter,
 
 static data uint32_t  button_manager_start_t = 0;
 
+CVD_SAMPLE_T _global_measured_state = 255;
+
 void button_manager (void) {                          // Requires at least a 750ms long button press to register a valid user button press
 
 	if (button_state == BST_INITIALIZING){
@@ -61,7 +63,9 @@ void button_manager (void) {                          // Requires at least a 750
 		return;
 	}
 
-	if (IS_BUTTON_PRESSED()) {                        // Button's physical state: pressed
+	_global_measured_state = MeasureTouchButton();
+
+	if (_global_measured_state < BUTTON_THRESHOLD) {                        // Button's physical state: pressed
 		switch (button_state) {                        // Handle press phase
 		    case BST_UNPRESSED: {                     // It happened at this moment
 				button_state  = BST_PRESSED_RECENTLY;  // Update button state

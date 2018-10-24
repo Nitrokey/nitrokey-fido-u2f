@@ -69,4 +69,8 @@ typedef enum {
 
 BUTTON_STATE_T button_get_press_state (void);
 
+#include "cvd_hw.h"
+
+extern CVD_SAMPLE_T _global_measured_state;
+
 #endif /* GPIO_H_ */

@@ -51,8 +51,8 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 	{
 		case U2F_CUSTOM_STATUS:
 			memset(out, 0xEE, sizeof(msg->pkt.init.payload));
-			button_sampled_read = MeasureTouchButton();
-			out[0] = button_sampled_read < 100;
+			button_sampled_read = _global_measured_state;
+			out[0] = button_sampled_read < BUTTON_THRESHOLD;
 
 			out[1] = button_get_press_state();
 			out[2] = last_button_cleared_time_delta();
