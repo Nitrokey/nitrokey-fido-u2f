@@ -39,6 +39,8 @@
 #include "u2f.h"
 #include "configuration.h"
 #include "sanity-check.h"
+#include "version.h"
+
 
 uint8_t custom_command(struct u2f_hid_msg * msg)
 {
@@ -69,6 +71,8 @@ uint8_t custom_command(struct u2f_hid_msg * msg)
 			out[4] = led_is_blinking();
 			out[5] = U2F_MS_CLEAR_BUTTON_PERIOD / 100;
 			out[6] = U2F_MS_INIT_BUTTON_PERIOD / 100;
+
+			memcpy(out+7, GIT_VERSION_PLACEHOLDER, GIT_VERSION_PLACEHOLDER_SIZE);
 
 			U2FHID_SET_LEN(msg, sizeof(msg->pkt.init.payload));
 			usb_write((uint8_t*)msg, 64);
