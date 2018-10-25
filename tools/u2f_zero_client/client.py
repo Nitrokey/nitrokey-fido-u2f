@@ -532,6 +532,9 @@ all_test_results = []
 import yaml # pip install pyyaml
 
 
+def binary_to_string(b):
+    return ''.join( [ chr(a) for a in b] )
+
 def do_status(h, wink=True):
     global all_test_results
     BUTTON_STATE_REGISTERED = 5
@@ -547,6 +550,8 @@ def do_status(h, wink=True):
     def signal_handler(signal=None, frame=None):
         global all_test_results
         print()
+        fver = binary_to_string(res[7:37])
+        print('firmware git sha: {}'.format(fver))
         if test_attempts > 0:
             print('{}/{} : {:02}%'.format(
                 pass_counter, test_attempts, pass_counter*100/test_attempts))
