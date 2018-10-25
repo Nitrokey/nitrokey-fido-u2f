@@ -63,7 +63,6 @@ void u2f_response_start()
 	watchdog();
 }
 
-
 static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
 	uint32_t t;

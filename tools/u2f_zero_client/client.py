@@ -183,6 +183,7 @@ class commands:
     U2F_CUSTOM_FACTORY_RESET = U2F_VENDOR_FIRST + 3
     U2F_CUSTOM_UPDATE_CONFIG = U2F_VENDOR_FIRST + 4
     U2F_CUSTOM_STATUS = U2F_VENDOR_FIRST + 5
+    U2F_CUSTOM_SANITY_CHECK = U2F_VENDOR_FIRST + 6
 
     U2F_HID_INIT = 0x86
     U2F_HID_PING = 0x81
@@ -218,6 +219,7 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     factory-reset: generate new device key')
     print('     status <should_blink: int: 0/1>: print status of the device / test touch button responsiveness')
     print('     update-config <show SN: int: 0/1>: update configuration of the device')
+    print('     sanity-check: check, if device is configured properly')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -500,6 +502,31 @@ def do_seed(h):
             num += len(c)
 
     h.close()
+
+
+def get_bit(a, b):
+    v = a & (1 << b)
+    return 1 if v > 0 else 0
+
+
+def do_sanity_check(h):
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_SANITY_CHECK, 0, 0]
+    res = None
+    h.write(cmd)
+    while not res or res[4] != commands.U2F_CUSTOM_SANITY_CHECK:
+        time.sleep(.1)
+        res = h.read(64, 1 * 1000)
+
+    res = res[7:]
+    print(data_to_hex_string(res[:10]))
+
+    print('constants {}'.format(get_bit(res[1], 0)))
+    print('eeprom {}'.format(get_bit(res[1], 1)))
+    print('fake touch {}'.format(get_bit(res[1], 2)))
+    print('disable watchdog {}'.format(get_bit(res[1], 3)))
+    print('setup firmware {}'.format(get_bit(res[1], 4)))
+
+
 
 all_test_results = []
 import yaml # pip install pyyaml
@@ -819,6 +846,9 @@ if __name__ == '__main__':
     elif action == 'passt':
         h = open_u2f(SN)
         do_passt(h)
+    elif action == 'sanity-check':
+        h = open_u2f(SN)
+        do_sanity_check(h)
     elif action == 'list':
         do_list()
     elif action == 'status':

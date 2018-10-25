@@ -29,9 +29,7 @@
 #define APP_H_
 
 #include <SI_EFM8UB3_Register_Enums.h>
-#include <stdarg.h>
 #include "u2f_hid.h"
-
 
 // hw settings
 #define BUTTON_MIN_PRESS_T_MS    750
@@ -39,7 +37,7 @@
 #define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
 #define LED_BLINK_T_ON           (LED_BLINK_PERIOD/2)                                 // ms
-#define LED_BLINK_T_OFF          (led_blink_period_t - LED_BLINK_T_ON)  // ms
+#define LED_BLINK_T_OFF          (led_blink_period_t - led_blink_ON_t)  // ms
 #define LED_BLINK_PERIOD         (780)                                 // ms
 #define LED_BLINK_NUM_INF        255
 
@@ -65,6 +63,7 @@
 //#define DEBUG_GATHER_ATECC_ERRORS
 
 #define FEAT_FACTORY_RESET
+#define FEAT_SANITY_CHECK
 
 // Uncomment this to make configuration firmware (stage 1 firmware)
 #define ATECC_SETUP_DEVICE
@@ -89,6 +88,9 @@
 	#undef U2F_USING_BOOTLOADER
 	#ifndef FEAT_FACTORY_RESET
 		#define FEAT_FACTORY_RESET
+	#endif
+	#ifndef FEAT_SANITY_CHECK
+		#define FEAT_SANITY_CHECK
 	#endif
 	#ifndef ATECC_SETUP_DEVICE
 		#define _SECURE_EEPROM
