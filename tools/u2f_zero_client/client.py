@@ -539,6 +539,7 @@ def do_status(h, wink=True):
     global all_test_results
     BUTTON_STATE_REGISTERED = 5
     SAMPLES_TARGET_COUNT = 1005
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
 
     test_attempts = 0
     pass_counter = 0
@@ -558,9 +559,22 @@ def do_status(h, wink=True):
             with open('out.data', 'w+') as f:
                 f.write(yaml.dump(all_test_results))
             print(all_test_results)
-            print('test run settings: blinking: {}, clear period: {}, button init period: {}'.format(res[4], res[5], res[6]))
+        print('test run settings: blinking: {}, clear period: {}s, button init period: {}s'.format(res[4], res[5]/10, res[6]/10))
+        print()
         if signal or frame:
             exit(0)
+
+    def send_rcv_data(cmd):
+        res = []
+        h.write(cmd)
+        while not res or res[4] != commands.U2F_CUSTOM_STATUS:
+            time.sleep(.1)
+            res = h.read(64, 2*1000)
+        res = res[7:]
+        return res
+
+    res = send_rcv_data(cmd)
+    signal_handler()
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -570,15 +584,9 @@ def do_status(h, wink=True):
     touch_registered = False
     old_touch_registered = False
 
-    cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
     while sample_no < SAMPLES_TARGET_COUNT:
-        h.write(cmd)
+        res = send_rcv_data(cmd)
 
-        while not res or res[4] != commands.U2F_CUSTOM_STATUS:
-            time.sleep(.1)
-            res = h.read(64, 2*1000)
-
-        res = res[7:]
         print ('{:03}: {} {} {:02} {:02}'.format(sample_no, res[0], res[1], res[2], res[3]), end=' ')
         time.sleep(0.1)
         sample_no += 1
