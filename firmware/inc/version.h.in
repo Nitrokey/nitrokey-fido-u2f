@@ -26,9 +26,11 @@
 
 #ifndef INC_VERSION_H_
 #define INC_VERSION_H_
-
+#include <stdint.h>
 
 #define GIT_VERSION_PLACEHOLDER 	"GIT_VERSION_PLACEHOLDER-------"
-#define GIT_VERSION_PLACEHOLDER_SIZE	30
+
+extern uint8_t GIT_DESCRIPTION[];
+extern uint8_t GIT_DESCRIPTION_SIZE;
 
 #endif /* INC_VERSION_H_ */

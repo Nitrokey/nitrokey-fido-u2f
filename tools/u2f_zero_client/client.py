@@ -551,7 +551,7 @@ def do_status(h, wink=True):
     def signal_handler(signal=None, frame=None):
         global all_test_results
         print()
-        fver = binary_to_string(res[8:37])
+        fver = binary_to_string(res[9:9+res[8]])
         print('firmware git sha: {}'.format(fver))
         if test_attempts > 0:
             print('{}/{} : {:02}%'.format(
