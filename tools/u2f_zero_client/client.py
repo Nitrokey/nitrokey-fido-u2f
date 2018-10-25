@@ -551,7 +551,7 @@ def do_status(h, wink=True):
     def signal_handler(signal=None, frame=None):
         global all_test_results
         print()
-        fver = binary_to_string(res[7:37])
+        fver = binary_to_string(res[8:37])
         print('firmware git sha: {}'.format(fver))
         if test_attempts > 0:
             print('{}/{} : {:02}%'.format(
@@ -559,7 +559,7 @@ def do_status(h, wink=True):
             with open('out.data', 'w+') as f:
                 f.write(yaml.dump(all_test_results))
             print(all_test_results)
-        print('test run settings: blinking: {}, clear period: {}s, button init period: {}s'.format(res[4], res[5]/10, res[6]/10))
+        print('test run settings: blinking: {}, clear period: {}s, button init period: {}s, button press time: {}ms'.format(res[4], res[5]/10, res[6]/10, res[7]*10))
         print()
         if signal or frame:
             exit(0)
