@@ -63,11 +63,29 @@ void u2f_response_start()
 	watchdog();
 }
 
+static bool first_request_accepted = false;
+
+/**
+ * Confirm user presence by getting touch button, or device insertion.
+ * Returns: '0' - user presence confirmed, '1' otherwise
+ * FIXME Move to gpio.c
+ */
 static int8_t _u2f_get_user_feedback(BUTTON_STATE_T target_button_state, bool blink)
 {
 	uint32_t t;
 	uint8_t user_presence = 0;
 
+	// Accept first request in the first SELF_ACCEPT_MAX_T_MS after power cycle.
+	// Solution only for a short touch request, not for configuration changes.
+	if (!first_request_accepted && (get_ms() < SELF_ACCEPT_MAX_T_MS)
+			&& (target_button_state == BST_PRESSED_REGISTERED) ){
+		first_request_accepted = true;
+		led_off();
+		return 0;
+	}
+
+	// Reject all requests, if device is not ready yet for touch button feedback,
+	// or if the touch is already consumed
 	if (button_press_is_consumed() || button_get_press_state() < BST_META_READY_TO_USE)
 		return 1;
 

@@ -36,6 +36,10 @@
 #define BUTTON_MIN_PRESS_T_MS_EXT    (10*1000)
 #define BUTTON_MAX_PRESS_T_MS    (3*1000)
 
+// set time after the power on, during which a single U2F or configuration
+// request would be accepted
+#define SELF_ACCEPT_MAX_T_MS    (2*1000)
+
 #define LED_BLINK_T_ON           (LED_BLINK_PERIOD/2)                                 // ms
 #define LED_BLINK_T_OFF          (led_blink_period_t - led_blink_ON_t)  // ms
 #define LED_BLINK_PERIOD         (780)                                 // ms
