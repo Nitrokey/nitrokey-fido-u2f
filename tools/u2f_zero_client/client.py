@@ -210,7 +210,6 @@ if len(sys.argv) not in [2,3,4,5,6]:
     Specify ECC P-256 private key for token attestation.  Specify temporary output file for generated
     keys.""")
     print('     rng: Continuously dump random numbers from the devices hardware RNG.')
-    print('     seed: update the hardware RNG seed with input from stdin')
     print('     list: list all connected U2F Zero tokens.')
     print('     wink: blink the LED')
     print('     ping <bytes count>: test ping capabilities of the device')
@@ -479,30 +478,6 @@ def do_rng(h):
                 data = array.array('B',rng[6+1:6+1+32]).tostring()
                 sys.stdout.write(data)
                 sys.stdout.flush()
-
-def do_seed(h):
-    cmd = cmd_prefix + [ commands.U2F_CUSTOM_SEED, 0,20]
-    num = 0
-    # typically runs around 414 bytes/s
-    def signal_handler(signal, frame):
-        print('seeded %i bytes' % num)
-        sys.exit(0)
-    signal.signal(signal.SIGINT, signal_handler)
-    while True:
-        # must be 20 bytes or less at a time
-        c = sys.stdin.read(20)
-        if not c:
-            break
-        buf = [ord(x) for x in c]
-        h.write(cmd + buf)
-        res = h.read(64, 1000)
-        if not res or res[7] != 1:
-            sys.stderr.write('error: device error\n')
-        else:
-            num += len(c)
-
-    h.close()
-
 
 def get_bit(a, b):
     v = a & (1 << b)
@@ -850,9 +825,6 @@ if __name__ == '__main__':
     elif action == 'update-config':
         h = open_u2f(SN)
         do_update_config(h, int(sys.argv[2]) if len(sys.argv) >= 3 else False)
-    elif action == 'seed':
-        h = open_u2f(SN)
-        do_seed(h)
     elif action in ['factory-reset', 'wipe']:
         h = open_u2f(SN)
         do_wipe(h)
