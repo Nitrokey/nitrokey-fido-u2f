@@ -219,6 +219,7 @@ if len(sys.argv) not in [2,3,4,5,6]:
     print('     status <should_blink: int: 0/1>: print status of the device / test touch button responsiveness')
     print('     update-config <show SN: int: 0/1>: update configuration of the device')
     print('     sanity-check: check, if device is configured properly')
+    print('     version: get firmware version string')
     sys.exit(1)
 
 def open_u2f(SN=None):
@@ -227,7 +228,7 @@ def open_u2f(SN=None):
         h.open(0x20a0,0x4287,SN if SN is None else unicode(SN))
         if SN is None:
             SN = h.get_serial_number_string()
-        print('opened ', SN)
+        print('Opened device with SN: ', SN)
     except IOError as ex:
         print( ex)
         if SN is None: print( 'U2F Zero not found')
@@ -485,6 +486,7 @@ def get_bit(a, b):
 
 
 def do_sanity_check(h):
+    print('Asking device for sanity check status:', end='')
     cmd = cmd_prefix + [commands.U2F_CUSTOM_SANITY_CHECK, 0, 0]
     res = None
     h.write(cmd)
@@ -493,13 +495,16 @@ def do_sanity_check(h):
         res = h.read(64, 1 * 1000)
 
     res = res[7:]
-    print(data_to_hex_string(res[:10]))
 
-    print('constants {}'.format(get_bit(res[1], 0)))
-    print('eeprom {}'.format(get_bit(res[1], 1)))
-    print('fake touch {}'.format(get_bit(res[1], 2)))
-    print('disable watchdog {}'.format(get_bit(res[1], 3)))
-    print('setup firmware {}'.format(get_bit(res[1], 4)))
+    # print(data_to_hex_string(res[:10]))
+    status_str = 'passed' if res[0] == 1 else 'failed'
+    print(' sanity check {}.'.format(status_str.upper()))
+    print('Details:')
+    print(' constants set: {}'.format(get_bit(res[1], 0)))
+    print(' read protection active: {}'.format(get_bit(res[1], 1)))
+    print(' fake touch active: {}'.format(get_bit(res[1], 2)))
+    print(' disabled watchdog: {}'.format(get_bit(res[1], 3)))
+    print(' is it setup firmware: {}'.format(get_bit(res[1], 4)))
 
 
 
@@ -509,6 +514,24 @@ import yaml # pip install pyyaml
 
 def binary_to_string(b):
     return ''.join( [ chr(a) for a in b] )
+
+
+def send_rcv_data(cmd):
+    res = []
+    h.write(cmd)
+    while not res or res[4] != commands.U2F_CUSTOM_STATUS:
+        time.sleep(.1)
+        res = h.read(64, 2*1000)
+    res = res[7:]
+    return res
+
+
+def do_version(h):
+    cmd = cmd_prefix + [commands.U2F_CUSTOM_STATUS, 0,0]
+    res = send_rcv_data(cmd)
+    fver = binary_to_string(res[9:9 + res[8]])
+    print('Firmware Git version: {}'.format(fver))
+
 
 def do_status(h, wink=True):
     global all_test_results
@@ -539,14 +562,6 @@ def do_status(h, wink=True):
         if signal or frame:
             exit(0)
 
-    def send_rcv_data(cmd):
-        res = []
-        h.write(cmd)
-        while not res or res[4] != commands.U2F_CUSTOM_STATUS:
-            time.sleep(.1)
-            res = h.read(64, 2*1000)
-        res = res[7:]
-        return res
 
     res = send_rcv_data(cmd)
     signal_handler()
@@ -775,7 +790,11 @@ def send_receive(h, to_send, delay=1000):
 
 def do_fingerprints(h):
     print('Get data slots fingerprints')
+    print('SETUP firmware only')
     data = send_receive(h, [0, commands.U2F_CONFIG_GET_SLOTS_FINGERPRINTS])
+    if not data:
+        print('\nFailed to execute\n')
+        return
     print (len(data), data_to_hex_string(data))
     print()
     if len(data) < 2:
@@ -801,6 +820,7 @@ def do_fingerprints(h):
 
 
 if __name__ == '__main__':
+    print('Nitrokey FIDO U2F client application')
     action = sys.argv[1].lower()
     h = None
     SN = None
@@ -839,6 +859,9 @@ if __name__ == '__main__':
     elif action == 'status':
         h = open_u2f(SN)
         do_status(h, bool(int(sys.argv[2])) if len(sys.argv) > 2 else True)
+    elif action == 'version':
+        h = open_u2f(SN)
+        do_version(h)
     elif action == 'config-test':
         h = open_u2f(SN)
         do_config_test(h)
