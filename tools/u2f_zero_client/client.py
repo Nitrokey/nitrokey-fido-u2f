@@ -616,41 +616,23 @@ def do_status(h, wink=True):
 
 
 def do_wipe(h):
+    print('Press Nitrokey button and press ENTER to continue')
+    print('Please keep the Nitrokey button pressed until further notice (about 10 seconds)')
+    raw_input()
     cmd = cmd_prefix + [commands.U2F_CUSTOM_FACTORY_RESET, 0,0]
     h.write(cmd)
-    # print('Press U2F button repeatedly until the LED is no longer red.')
     res = None
 
     while not res or res[4] != commands.U2F_CUSTOM_FACTORY_RESET:
         time.sleep(.3)
         res = h.read(64, 20*1000)
 
-    print(data_to_hex_string(res))
-    print()
     res = res[4:]
-    print(data_to_hex_string(res[:6]))
-
-    data = iter(res[6:])
-    _data = {}
-    for i in range(3):
-        l = next_i(data, 8)
-        _data[i] = l
-        print(data_to_hex_string(l))
-
-    for i in range(2):
-        l = next_i(data, 8)
-        if not _data[i] == l:
-            print(data_to_hex_string(l))
-
-    for i in range(2):
-        l = next_i(data, 4)
-        if l != [0xFF]*4:
-            print(data_to_hex_string(l))
-
     if res[3] == 1 and res[4] == 1 and res[5] == 1:
         print('Wipe succeeded')
     else:
         print('Wipe failed')
+        print('Please make sure the button is pressed during the operation')
 
 def hexcode2bytes(color):
     h = [ord(x) for x in color.replace('#','').decode('hex')]
